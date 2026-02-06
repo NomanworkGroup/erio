@@ -54,9 +54,6 @@ pub enum CoreError {
 
     #[error("Tool error: {0}")]
     Tool(#[from] ToolError),
-
-    #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
 }
 
 impl CoreError {
@@ -68,7 +65,6 @@ impl CoreError {
                 matches!(status, None | Some(429 | 500..))
             }
             Self::Tool(err) => err.is_retryable(),
-            Self::Io(_) => true, // IO errors are generally transient
         }
     }
 }
@@ -200,10 +196,4 @@ mod tests {
         assert!(matches!(core_err, CoreError::Tool(_)));
     }
 
-    #[test]
-    fn core_error_from_io_error() {
-        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
-        let core_err: CoreError = io_err.into();
-        assert!(matches!(core_err, CoreError::Io(_)));
-    }
 }
