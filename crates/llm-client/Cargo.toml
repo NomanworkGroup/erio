@@ -1,0 +1,12 @@
+[package]
+name = "erio-llm-client"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "LLM provider abstraction and adapters for Erio"
+
+[dependencies]
+
+[lints]
+workspace = true

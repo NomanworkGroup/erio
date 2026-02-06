@@ -1,0 +1,12 @@
+[package]
+name = "erio-workflow"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "DAG workflow engine for Erio"
+
+[dependencies]
+
+[lints]
+workspace = true

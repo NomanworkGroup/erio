@@ -1,0 +1,12 @@
+[package]
+name = "erio-tools"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Tool registry and execution for Erio"
+
+[dependencies]
+
+[lints]
+workspace = true
