@@ -159,6 +159,12 @@ dependencies = [
 [[package]]
 name = "erio-embedding"
 version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "erio-core",
+ "thiserror",
+ "tokio",
+]
 
 [[package]]
 name = "erio-event-bus"

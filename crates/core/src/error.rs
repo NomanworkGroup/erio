@@ -54,6 +54,9 @@ pub enum CoreError {
 
     #[error("Tool error: {0}")]
     Tool(#[from] ToolError),
+
+    #[error("Embedding error: {message}")]
+    Embedding { message: String },
 }
 
 impl CoreError {
@@ -65,6 +68,7 @@ impl CoreError {
                 matches!(status, None | Some(429 | 500..))
             }
             Self::Tool(err) => err.is_retryable(),
+            Self::Embedding { .. } => false,
         }
     }
 }
@@ -194,6 +198,24 @@ mod tests {
         let tool_err = ToolError::NotFound("test".into());
         let core_err: CoreError = tool_err.into();
         assert!(matches!(core_err, CoreError::Tool(_)));
+    }
+
+    // === Embedding Error Tests ===
+
+    #[test]
+    fn core_error_embedding_displays_message() {
+        let err = CoreError::Embedding {
+            message: "model load failed".into(),
+        };
+        assert_eq!(err.to_string(), "Embedding error: model load failed");
+    }
+
+    #[test]
+    fn core_error_embedding_is_not_retryable() {
+        let err = CoreError::Embedding {
+            message: "dimension mismatch".into(),
+        };
+        assert!(!err.is_retryable());
     }
 
 }

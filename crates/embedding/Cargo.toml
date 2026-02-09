@@ -7,6 +7,12 @@ license.workspace = true
 description = "Embedding engine for Erio"
 
 [dependencies]
+erio-core = { path = "../core" }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros"] }
 
 [lints]
 workspace = true
