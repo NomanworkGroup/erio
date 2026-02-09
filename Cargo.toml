@@ -33,6 +33,13 @@ futures-core = "0.3"
 # Logging (minimal in Phase 1)
 tracing = "0.1"
 
+# ML / Inference
+candle-core = "0.9"
+candle-nn = "0.9"
+candle-transformers = "0.9"
+tokenizers = { version = "0.21", default-features = false, features = ["onig"] }
+hf-hub = { version = "0.4", features = ["tokio"] }
+
 # Test dependencies
 mockall = "0.13"
 wiremock = "0.6"

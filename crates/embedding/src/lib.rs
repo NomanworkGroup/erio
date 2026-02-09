@@ -3,9 +3,14 @@
 pub mod config;
 pub mod engine;
 pub mod error;
-pub mod in_memory;
+pub mod gemma;
+pub mod model;
+pub mod remote;
+pub mod task;
 
 pub use config::EmbeddingConfig;
 pub use engine::EmbeddingEngine;
 pub use error::EmbeddingError;
-pub use in_memory::InMemoryEmbedding;
+pub use gemma::GemmaEmbedding;
+pub use remote::RemoteEmbedding;
+pub use task::TaskType;

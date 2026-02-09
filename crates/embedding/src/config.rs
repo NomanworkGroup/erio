@@ -1,8 +1,12 @@
 //! Configuration for embedding engines.
 
+use crate::task::TaskType;
+
 /// Configuration for an embedding engine.
 #[derive(Debug, Clone)]
 pub struct EmbeddingConfig {
+    /// `HuggingFace` model identifier (e.g. "ggml-org/embeddinggemma-300M-GGUF").
+    pub model_id: String,
     /// Output vector dimensions.
     pub dimensions: usize,
     /// Maximum number of texts to embed in a single batch.
@@ -11,15 +15,19 @@ pub struct EmbeddingConfig {
     pub max_input_length: usize,
     /// Whether to L2-normalize output vectors to unit length.
     pub normalize: bool,
+    /// Task type for prompt formatting.
+    pub task_type: TaskType,
 }
 
 impl Default for EmbeddingConfig {
     fn default() -> Self {
         Self {
-            dimensions: 384,
+            model_id: "ggml-org/embeddinggemma-300M-GGUF".to_owned(),
+            dimensions: 768,
             batch_size: 32,
-            max_input_length: 512,
+            max_input_length: 2048,
             normalize: true,
+            task_type: TaskType::default(),
         }
     }
 }
@@ -41,6 +49,11 @@ impl EmbeddingConfig {
 }
 
 impl EmbeddingConfigBuilder {
+    pub fn model_id(mut self, model_id: impl Into<String>) -> Self {
+        self.config.model_id = model_id.into();
+        self
+    }
+
     pub fn dimensions(mut self, dimensions: usize) -> Self {
         self.config.dimensions = dimensions;
         self
@@ -61,6 +74,11 @@ impl EmbeddingConfigBuilder {
         self
     }
 
+    pub fn task_type(mut self, task_type: TaskType) -> Self {
+        self.config.task_type = task_type;
+        self
+    }
+
     pub fn build(self) -> EmbeddingConfig {
         self.config
     }
@@ -73,10 +91,12 @@ mod tests {
     #[test]
     fn default_config_has_sensible_values() {
         let config = EmbeddingConfig::default();
-        assert_eq!(config.dimensions, 384);
+        assert_eq!(config.model_id, "ggml-org/embeddinggemma-300M-GGUF");
+        assert_eq!(config.dimensions, 768);
         assert_eq!(config.batch_size, 32);
-        assert_eq!(config.max_input_length, 512);
+        assert_eq!(config.max_input_length, 2048);
         assert!(config.normalize);
+        assert_eq!(config.task_type, TaskType::SearchResult);
     }
 
     #[test]
@@ -106,16 +126,36 @@ mod tests {
     }
 
     #[test]
+    fn builder_sets_model_id() {
+        let config = EmbeddingConfig::builder()
+            .model_id("custom/model")
+            .build();
+        assert_eq!(config.model_id, "custom/model");
+    }
+
+    #[test]
+    fn builder_sets_task_type() {
+        let config = EmbeddingConfig::builder()
+            .task_type(TaskType::CodeRetrieval)
+            .build();
+        assert_eq!(config.task_type, TaskType::CodeRetrieval);
+    }
+
+    #[test]
     fn builder_chains_all_fields() {
         let config = EmbeddingConfig::builder()
-            .dimensions(768)
+            .model_id("custom/model")
+            .dimensions(512)
             .batch_size(16)
             .max_input_length(256)
             .normalize(false)
+            .task_type(TaskType::Clustering)
             .build();
-        assert_eq!(config.dimensions, 768);
+        assert_eq!(config.model_id, "custom/model");
+        assert_eq!(config.dimensions, 512);
         assert_eq!(config.batch_size, 16);
         assert_eq!(config.max_input_length, 256);
         assert!(!config.normalize);
+        assert_eq!(config.task_type, TaskType::Clustering);
     }
 }
