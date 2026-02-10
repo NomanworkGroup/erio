@@ -5,7 +5,7 @@ members = ["crates/*", "test-utils"]
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.93.0"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/NomanworkGroup/erio"
 
@@ -29,9 +29,15 @@ async-trait = "0.1"
 
 # Streams
 futures-core = "0.3"
+futures = "0.3"
 
 # Logging (minimal in Phase 1)
 tracing = "0.1"
+
+# Vector database
+lancedb = "0.26"
+arrow-array = "54"
+arrow-schema = "54"
 
 # ML / Inference
 candle-core = "0.9"
@@ -49,6 +55,7 @@ tempfile = "3"
 
 # Internal crates
 core = { path = "crates/core", package = "erio-core" }
+embedding = { path = "crates/embedding", package = "erio-embedding" }
 test-utils = { path = "test-utils", package = "erio-test-utils" }
 
 [workspace.lints.rust]

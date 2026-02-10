@@ -7,6 +7,32 @@ license.workspace = true
 description = "Context and vector storage for Erio"
 
 [dependencies]
+erio-core = { path = "../core" }
+erio-embedding = { path = "../embedding" }
+
+# Vector database
+lancedb.workspace = true
+arrow-array.workspace = true
+arrow-schema.workspace = true
+
+# Async
+tokio.workspace = true
+async-trait.workspace = true
+futures.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Error handling
+thiserror.workspace = true
+
+# Logging
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["test-util", "macros", "rt-multi-thread"] }
 
 [lints]
 workspace = true

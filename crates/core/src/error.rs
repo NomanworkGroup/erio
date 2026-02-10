@@ -57,6 +57,9 @@ pub enum CoreError {
 
     #[error("Embedding error: {message}")]
     Embedding { message: String },
+
+    #[error("Context store error: {message}")]
+    ContextStore { message: String },
 }
 
 impl CoreError {
@@ -68,7 +71,7 @@ impl CoreError {
                 matches!(status, None | Some(429 | 500..))
             }
             Self::Tool(err) => err.is_retryable(),
-            Self::Embedding { .. } => false,
+            Self::Embedding { .. } | Self::ContextStore { .. } => false,
         }
     }
 }
@@ -218,4 +221,21 @@ mod tests {
         assert!(!err.is_retryable());
     }
 
+    // === Context Store Error Tests ===
+
+    #[test]
+    fn core_error_context_store_displays_message() {
+        let err = CoreError::ContextStore {
+            message: "table not found".into(),
+        };
+        assert_eq!(err.to_string(), "Context store error: table not found");
+    }
+
+    #[test]
+    fn core_error_context_store_is_not_retryable() {
+        let err = CoreError::ContextStore {
+            message: "storage failure".into(),
+        };
+        assert!(!err.is_retryable());
+    }
 }
