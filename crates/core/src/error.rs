@@ -60,6 +60,9 @@ pub enum CoreError {
 
     #[error("Context store error: {message}")]
     ContextStore { message: String },
+
+    #[error("Event bus error: {message}")]
+    EventBus { message: String },
 }
 
 impl CoreError {
@@ -71,7 +74,7 @@ impl CoreError {
                 matches!(status, None | Some(429 | 500..))
             }
             Self::Tool(err) => err.is_retryable(),
-            Self::Embedding { .. } | Self::ContextStore { .. } => false,
+            Self::Embedding { .. } | Self::ContextStore { .. } | Self::EventBus { .. } => false,
         }
     }
 }
@@ -217,6 +220,24 @@ mod tests {
     fn core_error_embedding_is_not_retryable() {
         let err = CoreError::Embedding {
             message: "dimension mismatch".into(),
+        };
+        assert!(!err.is_retryable());
+    }
+
+    // === Event Bus Error Tests ===
+
+    #[test]
+    fn core_error_event_bus_displays_message() {
+        let err = CoreError::EventBus {
+            message: "source failed".into(),
+        };
+        assert_eq!(err.to_string(), "Event bus error: source failed");
+    }
+
+    #[test]
+    fn core_error_event_bus_is_not_retryable() {
+        let err = CoreError::EventBus {
+            message: "channel closed".into(),
         };
         assert!(!err.is_retryable());
     }
