@@ -36,8 +36,8 @@ tracing = "0.1"
 
 # Vector database
 lancedb = "0.26"
-arrow-array = "54"
-arrow-schema = "54"
+arrow-array = "57"
+arrow-schema = "57"
 
 # ML / Inference
 candle-core = "0.9"
