@@ -18,6 +18,7 @@ pub trait Step: Send + Sync {
 pub struct StepOutput {
     value: String,
     metadata: Option<serde_json::Value>,
+    skipped: bool,
 }
 
 impl StepOutput {
@@ -26,7 +27,22 @@ impl StepOutput {
         Self {
             value: value.into(),
             metadata: None,
+            skipped: false,
         }
+    }
+
+    /// Creates a skipped step output (condition was false).
+    pub fn skipped() -> Self {
+        Self {
+            value: String::new(),
+            metadata: None,
+            skipped: true,
+        }
+    }
+
+    /// Returns `true` if this output represents a skipped step.
+    pub fn is_skipped(&self) -> bool {
+        self.skipped
     }
 
     /// Returns the output value.

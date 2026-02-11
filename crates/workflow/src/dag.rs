@@ -383,4 +383,153 @@ mod tests {
         assert!(dag.contains("a"));
         assert!(!dag.contains("b"));
     }
+
+    // === Property-Based Tests ===
+
+    mod prop {
+        use super::*;
+        use proptest::prelude::*;
+
+        /// Strategy: generate a list of (node_index, Vec<dep_indices>) where
+        /// dep_indices only reference earlier nodes (forward-only → always acyclic).
+        fn arb_acyclic_dag() -> impl Strategy<Value = Vec<(usize, Vec<usize>)>> {
+            (1usize..=20).prop_flat_map(|n| {
+                let edges: Vec<BoxedStrategy<(usize, Vec<usize>)>> = (0..n)
+                    .map(|i| {
+                        if i == 0 {
+                            Just((i, vec![])).boxed()
+                        } else {
+                            proptest::collection::vec(0..i, 0..=i.min(4))
+                                .prop_map(move |deps| {
+                                    let unique: Vec<usize> =
+                                        deps.into_iter().collect::<std::collections::HashSet<_>>()
+                                            .into_iter().collect();
+                                    (i, unique)
+                                })
+                                .boxed()
+                        }
+                    })
+                    .collect();
+                edges
+            })
+        }
+
+        /// Strategy: generate arbitrary edges that may contain cycles.
+        fn arb_maybe_cyclic_edges() -> impl Strategy<Value = Vec<(usize, Vec<usize>)>> {
+            (2usize..=15).prop_flat_map(|n| {
+                let edges: Vec<BoxedStrategy<(usize, Vec<usize>)>> = (0..n)
+                    .map(|i| {
+                        proptest::collection::vec(0..n, 0..=3)
+                            .prop_map(move |deps| {
+                                let unique: Vec<usize> =
+                                    deps.into_iter()
+                                        .filter(|d| *d != i)
+                                        .collect::<std::collections::HashSet<_>>()
+                                        .into_iter().collect();
+                                (i, unique)
+                            })
+                            .boxed()
+                    })
+                    .collect();
+                edges
+            })
+        }
+
+        /// Build a Dag from index-based edges (bypasses add_node validation).
+        fn build_dag_from_edges(edges: &[(usize, Vec<usize>)]) -> Dag {
+            let mut dag = Dag::new();
+            // First pass: add all nodes without deps
+            for (i, _) in edges {
+                let id = format!("n{i}");
+                let _ = dag.add_node(&id, &[]);
+            }
+            // Second pass: inject dependency edges directly
+            for (i, deps) in edges {
+                let id = format!("n{i}");
+                if let Some(dep_list) = dag.dependencies.get_mut(&id) {
+                    for d in deps {
+                        let dep_id = format!("n{d}");
+                        if !dep_list.contains(&dep_id) {
+                            dep_list.push(dep_id);
+                        }
+                    }
+                }
+            }
+            dag
+        }
+
+        proptest! {
+            #![proptest_config(ProptestConfig::with_cases(500))]
+
+            #[test]
+            fn acyclic_dag_always_produces_valid_topo_order(edges in arb_acyclic_dag()) {
+                let dag = build_dag_from_edges(&edges);
+                let order = dag.topological_order().unwrap();
+
+                // All nodes present
+                prop_assert_eq!(order.len(), dag.len());
+
+                // Every dependency appears before its dependent
+                let pos: std::collections::HashMap<&str, usize> = order
+                    .iter()
+                    .enumerate()
+                    .map(|(i, id)| (*id, i))
+                    .collect();
+
+                for (id, deps) in &dag.dependencies {
+                    for dep in deps {
+                        prop_assert!(
+                            pos[dep.as_str()] < pos[id.as_str()],
+                            "dep {} should come before {} in topo order",
+                            dep, id
+                        );
+                    }
+                }
+            }
+
+            #[test]
+            fn topo_order_never_hangs(edges in arb_maybe_cyclic_edges()) {
+                let dag = build_dag_from_edges(&edges);
+                let result = dag.topological_order();
+                // Must terminate: either Ok or CycleDetected
+                let valid = result.is_ok()
+                    || matches!(result, Err(WorkflowError::CycleDetected { .. }));
+                prop_assert!(valid, "topological_order must return Ok or CycleDetected");
+            }
+
+            #[test]
+            fn parallel_groups_cover_all_nodes(edges in arb_acyclic_dag()) {
+                let dag = build_dag_from_edges(&edges);
+                let groups = dag.parallel_groups().unwrap();
+                let total: usize = groups.iter().map(Vec::len).sum();
+                prop_assert_eq!(total, dag.len());
+            }
+
+            #[test]
+            fn parallel_groups_respect_dependencies(edges in arb_acyclic_dag()) {
+                let dag = build_dag_from_edges(&edges);
+                let groups = dag.parallel_groups().unwrap();
+
+                // Build group index for each node
+                let mut group_of: std::collections::HashMap<&str, usize> =
+                    std::collections::HashMap::new();
+                for (gi, group) in groups.iter().enumerate() {
+                    for id in group {
+                        group_of.insert(id, gi);
+                    }
+                }
+
+                // Every dependency must be in a strictly earlier group
+                for (id, deps) in &dag.dependencies {
+                    for dep in deps {
+                        prop_assert!(
+                            group_of[dep.as_str()] < group_of[id.as_str()],
+                            "dep {} (group {}) should be in earlier group than {} (group {})",
+                            dep, group_of[dep.as_str()], id, group_of[id.as_str()]
+                        );
+                    }
+                }
+            }
+        }
+    }
 }

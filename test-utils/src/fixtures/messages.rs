@@ -1,6 +1,6 @@
 //! Pre-built message fixtures for testing.
 
-use core::{Content, Message, Role, ToolCall};
+use erio_core::{Content, Message, Role, ToolCall};
 
 /// Creates a simple user message.
 pub fn user_message(text: &str) -> Message {

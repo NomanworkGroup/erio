@@ -1915,9 +1915,13 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "erio-core",
+ "erio-llm-client",
+ "erio-tools",
+ "erio-workflow",
  "serde",
  "serde_json",
  "tokio",
+ "wiremock",
 ]
 
 [[package]]
@@ -1937,6 +1941,7 @@ name = "erio-workflow"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "proptest",
  "serde",
  "serde_json",
  "tempfile",

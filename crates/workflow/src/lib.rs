@@ -2,6 +2,7 @@
 
 pub mod builder;
 pub mod checkpoint;
+pub mod conditional;
 pub mod context;
 pub mod dag;
 pub mod engine;
