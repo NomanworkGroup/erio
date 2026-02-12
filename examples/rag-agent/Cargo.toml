@@ -1,0 +1,24 @@
+[package]
+name = "rag-agent"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Retrieval-augmented generation agent using Erio ContextStore + Embedding + LLM"
+
+[dependencies]
+erio-core = { path = "../../crates/core" }
+erio-llm-client = { path = "../../crates/llm-client" }
+erio-context-store = { path = "../../crates/context-store" }
+erio-embedding = { path = "../../crates/embedding" }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["test-util", "macros", "rt-multi-thread"] }
+
+[lints]
+workspace = true

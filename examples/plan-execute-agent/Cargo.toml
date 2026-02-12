@@ -1,0 +1,24 @@
+[package]
+name = "plan-execute-agent"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Plan-then-execute agent using Erio workflow DAG"
+
+[dependencies]
+erio-core = { path = "../../crates/core" }
+erio-llm-client = { path = "../../crates/llm-client" }
+erio-tools = { path = "../../crates/tools" }
+erio-workflow = { path = "../../crates/workflow" }
+tokio = { workspace = true }
+async-trait = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util", "macros", "rt-multi-thread"] }
+
+[lints]
+workspace = true

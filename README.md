@@ -21,6 +21,17 @@ context storage.
 - `crates/context-store` (`erio-context-store`): vector-backed context storage
   and semantic retrieval.
 
+## Examples
+
+- `examples/react-agent`: ReAct (Reason + Act) loop agent using LLM + Tools.
+- `examples/plan-execute-agent`: Plan-then-execute agent using the workflow DAG
+  engine.
+- `examples/multi-agent-chat`: Multi-agent coordination pipeline via EventBus.
+- `examples/file-watcher-agent`: Event-driven file summariser using EventBus +
+  LLM.
+- `examples/rag-agent`: Retrieval-augmented generation using ContextStore,
+  Embedding, and LLM.
+
 ## Requirements
 
 - Rust `1.93.0` or newer (workspace minimum)
