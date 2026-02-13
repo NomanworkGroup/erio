@@ -12,11 +12,8 @@ erio-llm-client = { path = "../../crates/llm-client" }
 erio-tools = { path = "../../crates/tools" }
 tokio = { workspace = true }
 async-trait = { workspace = true }
+clap = { workspace = true }
 serde_json = { workspace = true }
-tracing = { workspace = true }
-
-[dev-dependencies]
-tokio = { workspace = true, features = ["test-util", "macros", "rt-multi-thread"] }
 
 [lints]
 workspace = true
