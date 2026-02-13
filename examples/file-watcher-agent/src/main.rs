@@ -36,7 +36,7 @@ struct Cli {
     api_key: String,
 
     /// Model name to use.
-    #[arg(short, long, default_value = "gpt-4")]
+    #[arg(short, long, default_value = "gpt-4o-mini")]
     model: String,
 
     /// Maximum number of files to process.

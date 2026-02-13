@@ -168,7 +168,7 @@ mod tests {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("POST"))
-            .and(path("/v1/chat/completions"))
+            .and(path("/chat/completions"))
             .and(header("authorization", "Bearer test-key"))
             .respond_with(
                 ResponseTemplate::new(200).set_body_json(valid_openai_response()),
@@ -196,7 +196,7 @@ mod tests {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("POST"))
-            .and(path("/v1/chat/completions"))
+            .and(path("/chat/completions"))
             .respond_with(
                 ResponseTemplate::new(200).set_body_json(tool_call_openai_response()),
             )
@@ -224,7 +224,7 @@ mod tests {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("POST"))
-            .and(path("/v1/chat/completions"))
+            .and(path("/chat/completions"))
             .respond_with(ResponseTemplate::new(401))
             .mount(&mock_server)
             .await;
@@ -247,7 +247,7 @@ mod tests {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("POST"))
-            .and(path("/v1/chat/completions"))
+            .and(path("/chat/completions"))
             .respond_with(ResponseTemplate::new(429))
             .mount(&mock_server)
             .await;
@@ -270,7 +270,7 @@ mod tests {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("POST"))
-            .and(path("/v1/chat/completions"))
+            .and(path("/chat/completions"))
             .respond_with(ResponseTemplate::new(500))
             .mount(&mock_server)
             .await;
@@ -294,7 +294,7 @@ mod tests {
 
         // First two calls return 429, third succeeds
         Mock::given(method("POST"))
-            .and(path("/v1/chat/completions"))
+            .and(path("/chat/completions"))
             .respond_with(ResponseTemplate::new(429))
             .up_to_n_times(2)
             .expect(2)
@@ -302,7 +302,7 @@ mod tests {
             .await;
 
         Mock::given(method("POST"))
-            .and(path("/v1/chat/completions"))
+            .and(path("/chat/completions"))
             .respond_with(
                 ResponseTemplate::new(200).set_body_json(valid_openai_response()),
             )
@@ -333,7 +333,7 @@ mod tests {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("POST"))
-            .and(path("/v1/chat/completions"))
+            .and(path("/chat/completions"))
             .respond_with(ResponseTemplate::new(401))
             .expect(1) // Should only be called once - no retry
             .mount(&mock_server)
@@ -362,7 +362,7 @@ mod tests {
         let mock_server = MockServer::start().await;
 
         Mock::given(method("POST"))
-            .and(path("/v1/chat/completions"))
+            .and(path("/chat/completions"))
             .respond_with(ResponseTemplate::new(429))
             .expect(3) // 1 initial + 2 retries
             .mount(&mock_server)

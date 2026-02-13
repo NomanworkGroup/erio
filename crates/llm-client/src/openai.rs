@@ -75,7 +75,7 @@ impl OpenAiProvider {
         &self,
         body: &serde_json::Value,
     ) -> Result<CompletionResponse, LlmError> {
-        let url = format!("{}/v1/chat/completions", self.base_url);
+        let url = format!("{}/chat/completions", self.base_url);
 
         let response = self
             .client
