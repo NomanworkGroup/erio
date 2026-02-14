@@ -24,11 +24,13 @@ use crate::error::EmbeddingError;
 /// - `attention_mask`: shape `[batch, seq_len]` with 1 for real tokens, 0 for padding
 pub fn mean_pool(embeddings: &Tensor, attention_mask: &Tensor) -> CandleResult<Tensor> {
     // Expand mask to [batch, seq_len, 1] for broadcasting
-    let mask = attention_mask.unsqueeze(D::Minus1)?.to_dtype(embeddings.dtype())?;
+    let mask = attention_mask
+        .unsqueeze(D::Minus1)?
+        .to_dtype(embeddings.dtype())?;
     let masked = embeddings.broadcast_mul(&mask)?;
     let summed = masked.sum(1)?; // [batch, hidden]
     let counts = mask.sum(1)?; // [batch, 1]
-    // Clamp to avoid division by zero
+                               // Clamp to avoid division by zero
     let counts = counts.clamp(1e-9, f64::MAX)?;
     summed.broadcast_div(&counts)
 }
@@ -191,9 +193,7 @@ impl LayerWeights {
 
         // Reshape back: [batch, seq, hidden]
         let q_dim = self.n_heads * self.head_dim;
-        let attn_out = attn_out
-            .transpose(1, 2)?
-            .reshape((b_sz, seq_len, q_dim))?;
+        let attn_out = attn_out.transpose(1, 2)?.reshape((b_sz, seq_len, q_dim))?;
         let attn_out = self.attn_o.forward(&attn_out)?;
 
         // Post-attention norm + residual
@@ -247,38 +247,42 @@ impl EmbeddingGemmaModel {
             .map_err(|e| EmbeddingError::ModelLoad(format!("failed to read GGUF: {e}")))?;
 
         // Read model config from GGUF metadata
+        let arch = match ct.metadata.get("general.architecture") {
+            Some(gguf_file::Value::String(s)) => s.clone(),
+            _ => "gemma3".to_string(),
+        };
         let get_meta_u32 = |key: &str| -> Result<u32, EmbeddingError> {
-            match ct.metadata.get(key) {
+            let full_key = format!("{arch}.{key}");
+            match ct.metadata.get(&full_key) {
                 Some(gguf_file::Value::U32(v)) => Ok(*v),
                 #[allow(clippy::cast_possible_truncation)]
                 Some(gguf_file::Value::U64(v)) => Ok(*v as u32),
                 _ => Err(EmbeddingError::ModelLoad(format!(
-                    "missing or invalid GGUF metadata: {key}"
+                    "missing or invalid GGUF metadata: {arch}.{key}"
                 ))),
             }
         };
         let get_meta_f32 = |key: &str| -> Result<f32, EmbeddingError> {
-            match ct.metadata.get(key) {
+            let full_key = format!("{arch}.{key}");
+            match ct.metadata.get(&full_key) {
                 Some(gguf_file::Value::F32(v)) => Ok(*v),
                 _ => Err(EmbeddingError::ModelLoad(format!(
-                    "missing or invalid GGUF metadata: {key}"
+                    "missing or invalid GGUF metadata: {arch}.{key}"
                 ))),
             }
         };
 
         #[allow(clippy::cast_possible_truncation)]
-        let n_layers = get_meta_u32("gemma3.block_count")? as usize;
+        let n_layers = get_meta_u32("block_count")? as usize;
         #[allow(clippy::cast_possible_truncation)]
-        let n_heads = get_meta_u32("gemma3.attention.head_count")? as usize;
+        let n_heads = get_meta_u32("attention.head_count")? as usize;
         #[allow(clippy::cast_possible_truncation)]
-        let n_kv_heads = get_meta_u32("gemma3.attention.head_count_kv")? as usize;
+        let n_kv_heads = get_meta_u32("attention.head_count_kv")? as usize;
         #[allow(clippy::cast_possible_truncation)]
-        let head_dim = get_meta_u32("gemma3.attention.key_length")? as usize;
-        let rms_eps = f64::from(
-            get_meta_f32("gemma3.attention.layer_norm_rms_epsilon")
-                .unwrap_or(1e-6_f32),
-        );
-        let rope_theta = f64::from(get_meta_f32("gemma3.rope.freq_base").unwrap_or(10000.0_f32));
+        let head_dim = get_meta_u32("attention.key_length")? as usize;
+        let rms_eps =
+            f64::from(get_meta_f32("attention.layer_norm_rms_epsilon").unwrap_or(1e-6_f32));
+        let rope_theta = f64::from(get_meta_f32("rope.freq_base").unwrap_or(10000.0_f32));
         let max_seq_len = 2048_usize;
 
         // Token embeddings (dequantize for lookup)
@@ -297,15 +301,7 @@ impl EmbeddingGemmaModel {
         for i in 0..n_layers {
             let prefix = format!("blk.{i}");
             let layer = Self::load_layer(
-                &ct,
-                &mut file,
-                &device,
-                &prefix,
-                rms_eps,
-                n_heads,
-                n_kv_heads,
-                head_dim,
-                &rotary,
+                &ct, &mut file, &device, &prefix, rms_eps, n_heads, n_kv_heads, head_dim, &rotary,
             )?;
             layers.push(layer);
         }
@@ -389,13 +385,9 @@ impl EmbeddingGemmaModel {
     }
 
     fn load_dense(path: &Path, device: &Device) -> Result<Linear, EmbeddingError> {
-        let tensors = candle_core::safetensors::load(path, device)
-            .map_err(|e| {
-                EmbeddingError::ModelLoad(format!(
-                    "dense safetensors load {}: {e}",
-                    path.display()
-                ))
-            })?;
+        let tensors = candle_core::safetensors::load(path, device).map_err(|e| {
+            EmbeddingError::ModelLoad(format!("dense safetensors load {}: {e}", path.display()))
+        })?;
         let weight = tensors
             .get("linear.weight")
             .or_else(|| tensors.get("weight"))
@@ -434,11 +426,10 @@ impl EmbeddingGemmaModel {
         let device = Device::Cpu;
 
         // [1, seq_len]
-        let input_ids =
-            Tensor::new(token_ids, &device)
-                .map_err(|e| EmbeddingError::Inference(format!("input tensor: {e}")))?
-                .unsqueeze(0)
-                .map_err(|e| EmbeddingError::Inference(format!("unsqueeze: {e}")))?;
+        let input_ids = Tensor::new(token_ids, &device)
+            .map_err(|e| EmbeddingError::Inference(format!("input tensor: {e}")))?
+            .unsqueeze(0)
+            .map_err(|e| EmbeddingError::Inference(format!("unsqueeze: {e}")))?;
         let attention_mask = Tensor::new(&attention_mask_data[..], &device)
             .map_err(|e| EmbeddingError::Inference(format!("mask tensor: {e}")))?
             .unsqueeze(0)
@@ -447,15 +438,19 @@ impl EmbeddingGemmaModel {
         // Token embeddings: [1, seq_len, hidden]
         let mut hidden = self
             .token_embd
-            .index_select(&input_ids.squeeze(0).map_err(|e| {
-                EmbeddingError::Inference(format!("squeeze: {e}"))
-            })?, 0)
+            .index_select(
+                &input_ids
+                    .squeeze(0)
+                    .map_err(|e| EmbeddingError::Inference(format!("squeeze: {e}")))?,
+                0,
+            )
             .map_err(|e| EmbeddingError::Inference(format!("embedding lookup: {e}")))?
             .unsqueeze(0)
             .map_err(|e| EmbeddingError::Inference(format!("embd unsqueeze: {e}")))?;
 
         // Gemma scales embeddings by sqrt(hidden_dim)
-        let hidden_dim = hidden.dim(D::Minus1)
+        let hidden_dim = hidden
+            .dim(D::Minus1)
             .map_err(|e| EmbeddingError::Inference(format!("hidden dim: {e}")))?;
         #[allow(clippy::cast_precision_loss)]
         let scale = (hidden_dim as f64).sqrt();
@@ -518,8 +513,7 @@ mod tests {
         let device = Device::Cpu;
         // [1, 3, 2] — 3 tokens, 2 hidden dims
         let embeddings =
-            Tensor::from_vec(vec![1.0_f32, 2.0, 3.0, 4.0, 5.0, 6.0], (1, 3, 2), &device)
-                .unwrap();
+            Tensor::from_vec(vec![1.0_f32, 2.0, 3.0, 4.0, 5.0, 6.0], (1, 3, 2), &device).unwrap();
         // All tokens are real
         let mask = Tensor::from_vec(vec![1.0_f32, 1.0, 1.0], (1, 3), &device).unwrap();
 
@@ -536,8 +530,7 @@ mod tests {
         let device = Device::Cpu;
         // [1, 3, 2] — 3 tokens, 2 hidden dims
         let embeddings =
-            Tensor::from_vec(vec![1.0_f32, 2.0, 3.0, 4.0, 99.0, 99.0], (1, 3, 2), &device)
-                .unwrap();
+            Tensor::from_vec(vec![1.0_f32, 2.0, 3.0, 4.0, 99.0, 99.0], (1, 3, 2), &device).unwrap();
         // Last token is padding
         let mask = Tensor::from_vec(vec![1.0_f32, 1.0, 0.0], (1, 3), &device).unwrap();
 
@@ -569,8 +562,7 @@ mod tests {
     #[test]
     fn l2_normalize_handles_batch() {
         let device = Device::Cpu;
-        let tensor =
-            Tensor::from_vec(vec![3.0_f32, 4.0, 0.0, 5.0], (2, 2), &device).unwrap();
+        let tensor = Tensor::from_vec(vec![3.0_f32, 4.0, 0.0, 5.0], (2, 2), &device).unwrap();
 
         let normalized = l2_normalize(&tensor).unwrap();
         let result: Vec<Vec<f32>> = normalized.to_vec2().unwrap();

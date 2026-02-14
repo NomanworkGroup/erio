@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use clap::Parser;
 use erio_core::Message;
-use erio_llm_client::{CompletionRequest, LlmProvider, OpenAiProvider};
+use erio_llm_client::{CompletionRequest, LlmProvider, OpenAiProvider, ToolDefinition};
 use erio_tools::{PropertyType, Tool, ToolRegistry, ToolResult, ToolSchema};
 
 // ---------------------------------------------------------------------------
@@ -111,9 +111,26 @@ impl ReactAgent {
     }
 
     fn build_request(&self, messages: &[Message]) -> CompletionRequest {
+        let tool_defs: Vec<ToolDefinition> = self
+            .tools
+            .list()
+            .into_iter()
+            .filter_map(|name| {
+                let tool = self.tools.get(name)?;
+                Some(ToolDefinition {
+                    name: tool.name().to_string(),
+                    description: tool.description().to_string(),
+                    parameters: tool.schema().to_json_schema(),
+                })
+            })
+            .collect();
+
         let mut req = CompletionRequest::new(&self.model);
         for msg in messages {
             req = req.message(msg.clone());
+        }
+        if !tool_defs.is_empty() {
+            req = req.tools(tool_defs);
         }
         req
     }

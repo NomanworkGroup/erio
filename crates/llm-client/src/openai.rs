@@ -39,10 +39,73 @@ impl OpenAiProvider {
         self
     }
 
+    /// Converts an internal [`erio_core::Message`] to the JSON shape the
+    /// OpenAI chat-completions API expects.
+    ///
+    /// Key differences from the naive serde output:
+    /// - Assistant tool-call content is split into a top-level `tool_calls`
+    ///   array (with `type: "function"` and stringified arguments).
+    /// - Tool-result messages use `tool_call_id` + plain-string `content`.
+    fn message_to_openai_json(msg: &erio_core::Message) -> serde_json::Value {
+        use erio_core::Role;
+
+        match msg.role {
+            Role::Assistant => {
+                let text: Option<String> = msg
+                    .content
+                    .iter()
+                    .filter_map(|c| c.as_text().map(String::from))
+                    .reduce(|a, b| format!("{a}\n{b}"));
+
+                let mut obj = serde_json::json!({ "role": "assistant" });
+                obj["content"] =
+                    text.map_or(serde_json::Value::Null, |t| serde_json::json!(t));
+
+                let tool_calls: Vec<serde_json::Value> = msg
+                    .tool_calls()
+                    .map(|tc| {
+                        serde_json::json!({
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.name,
+                                "arguments": tc.arguments.to_string(),
+                            }
+                        })
+                    })
+                    .collect();
+                if !tool_calls.is_empty() {
+                    obj["tool_calls"] = serde_json::json!(tool_calls);
+                }
+
+                obj
+            }
+            Role::Tool => {
+                serde_json::json!({
+                    "role": "tool",
+                    "tool_call_id": msg.tool_call_id,
+                    "content": msg.text().unwrap_or(""),
+                })
+            }
+            role => {
+                serde_json::json!({
+                    "role": role,
+                    "content": msg.text().unwrap_or(""),
+                })
+            }
+        }
+    }
+
     fn build_body(request: &CompletionRequest) -> serde_json::Value {
+        let messages: Vec<serde_json::Value> = request
+            .messages
+            .iter()
+            .map(Self::message_to_openai_json)
+            .collect();
+
         let mut body = serde_json::json!({
             "model": request.model,
-            "messages": request.messages,
+            "messages": messages,
         });
 
         if let Some(temp) = request.temperature {
@@ -97,7 +160,19 @@ impl OpenAiProvider {
                 openai_response.into_completion_response()
             }
             401 => Err(LlmError::Auth),
-            429 => Err(LlmError::RateLimited { retry_after: None }),
+            429 => {
+                let message = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "rate limited".into());
+                // OpenAI returns 429 for both rate limits and quota exceeded.
+                // Quota errors should not be retried.
+                if message.contains("insufficient_quota") {
+                    Err(LlmError::Api { status, message })
+                } else {
+                    Err(LlmError::RateLimited { retry_after: None })
+                }
+            }
             _ => {
                 let message = response
                     .text()

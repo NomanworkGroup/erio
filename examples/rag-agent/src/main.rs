@@ -13,7 +13,7 @@ use std::sync::Arc;
 use clap::Parser;
 use erio_context_store::{ContextConfig, ContextStore, ContextStoreError, HnswConfig};
 use erio_core::Message;
-use erio_embedding::{EmbeddingConfig, EmbeddingEngine, RemoteEmbedding};
+use erio_embedding::{EmbeddingConfig, EmbeddingEngine, GemmaEmbedding};
 use erio_llm_client::{CompletionRequest, LlmError, LlmProvider, OpenAiProvider};
 
 // ---------------------------------------------------------------------------
@@ -43,10 +43,6 @@ struct Cli {
     /// Model name to use for generation.
     #[arg(short, long, default_value = "gpt-4o-mini")]
     model: String,
-
-    /// Embedding API base URL (defaults to --base-url value).
-    #[arg(long, env = "EMBEDDING_BASE_URL")]
-    embedding_url: Option<String>,
 
     /// Number of documents to retrieve.
     #[arg(long, default_value_t = 5)]
@@ -137,12 +133,15 @@ async fn main() {
 
     let llm: Arc<dyn LlmProvider> = Arc::new(OpenAiProvider::new(&cli.base_url, &cli.api_key));
 
-    let embedding_url = cli.embedding_url.as_deref().unwrap_or(&cli.base_url);
-    let embedding: Arc<dyn EmbeddingEngine> = Arc::new(RemoteEmbedding::new(
-        embedding_url,
-        &cli.api_key,
-        EmbeddingConfig::default(),
-    ));
+    println!("Loading local embedding model...");
+    let embedding: Arc<dyn EmbeddingEngine> = Arc::new(
+        GemmaEmbedding::new(EmbeddingConfig::default())
+            .await
+            .unwrap_or_else(|e| {
+                eprintln!("Error: failed to load embedding model: {e}");
+                std::process::exit(1);
+            }),
+    );
 
     let config = ContextConfig {
         path: cli.store_path,

@@ -28,7 +28,10 @@ pub struct ModelFiles {
 /// the dense layers + tokenizer from `google/embeddinggemma-300m`.
 /// Requires `HF_TOKEN` environment variable for the gated Google model.
 pub async fn download_model_files(gguf_filename: &str) -> Result<ModelFiles, EmbeddingError> {
-    let api = hf_hub::api::tokio::Api::new()
+    let token = std::env::var("HF_TOKEN").ok();
+    let api = hf_hub::api::tokio::ApiBuilder::from_env()
+        .with_token(token)
+        .build()
         .map_err(|e| EmbeddingError::ModelLoad(format!("failed to create HF API: {e}")))?;
 
     // Download GGUF backbone (not gated)

@@ -36,6 +36,24 @@ context storage.
 
 - Rust `1.93.0` or newer (workspace minimum)
 - Cargo (ships with Rust)
+- `OPENAI_API_KEY` and `OPENAI_BASE_URL` environment variables for LLM examples
+- `HF_TOKEN` environment variable for the `rag-agent` example (requires accepted
+  [EmbeddingGemma license](https://huggingface.co/google/embeddinggemma-300m))
+
+## Running examples
+
+```bash
+export OPENAI_API_KEY=sk-...
+export OPENAI_BASE_URL=https://api.openai.com/v1
+
+cargo run -p react-agent -- --prompt "Please uppercase the word hello"
+cargo run -p plan-execute-agent -- --prompt "Add 10 and 20, then multiply by 3"
+cargo run -p multi-agent-chat -- --prompt "Explain why Rust is great"
+cargo run -p file-watcher-agent -- --files README.md
+
+export HF_TOKEN=hf_...
+cargo run -p rag-agent -- --query "What is erio?" --documents README.md
+```
 
 ## Common commands
 

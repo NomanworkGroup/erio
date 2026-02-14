@@ -63,10 +63,38 @@ impl std::error::Error for PlanError {}
 
 #[derive(Debug, Clone, serde::Deserialize)]
 struct PlanStep {
+    #[serde(deserialize_with = "de_string_or_number")]
     id: String,
     tool: String,
     params: serde_json::Value,
+    #[serde(default, deserialize_with = "de_string_or_number_vec")]
     deps: Vec<String>,
+}
+
+fn de_string_or_number<'de, D: serde::Deserializer<'de>>(d: D) -> Result<String, D::Error> {
+    let v: serde_json::Value = serde::Deserialize::deserialize(d)?;
+    match v {
+        serde_json::Value::String(s) => Ok(s),
+        serde_json::Value::Number(n) => Ok(n.to_string()),
+        other => Err(serde::de::Error::custom(format!(
+            "expected string or number, got {other}"
+        ))),
+    }
+}
+
+fn de_string_or_number_vec<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> Result<Vec<String>, D::Error> {
+    let v: Vec<serde_json::Value> = serde::Deserialize::deserialize(d)?;
+    v.into_iter()
+        .map(|item| match item {
+            serde_json::Value::String(s) => Ok(s),
+            serde_json::Value::Number(n) => Ok(n.to_string()),
+            other => Err(serde::de::Error::custom(format!(
+                "expected string or number, got {other}"
+            ))),
+        })
+        .collect()
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -127,9 +155,21 @@ async fn run_plan_execute(
     let response = llm.complete(request).await.map_err(PlanError::Llm)?;
     let raw = response.content.unwrap_or_default();
 
-    // 2. Parse the plan
+    let trimmed = raw.trim();
+    let json_str = if trimmed.starts_with("```") {
+        let without_open = trimmed
+            .strip_prefix("```json")
+            .or_else(|| trimmed.strip_prefix("```"))
+            .unwrap_or(trimmed);
+        without_open
+            .strip_suffix("```")
+            .unwrap_or(without_open)
+            .trim()
+    } else {
+        trimmed
+    };
     let json: serde_json::Value =
-        serde_json::from_str(&raw).map_err(|e| PlanError::InvalidPlan(e.to_string()))?;
+        serde_json::from_str(json_str).map_err(|e| PlanError::InvalidPlan(e.to_string()))?;
     let plan: Plan =
         serde_json::from_value(json).map_err(|e| PlanError::InvalidPlan(e.to_string()))?;
 
