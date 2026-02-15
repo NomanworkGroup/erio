@@ -37,8 +37,18 @@ context storage.
 - Rust `1.93.0` or newer (workspace minimum)
 - Cargo (ships with Rust)
 - `OPENAI_API_KEY` and `OPENAI_BASE_URL` environment variables for LLM examples
-- `HF_TOKEN` environment variable for the `rag-agent` example (requires accepted
-  [EmbeddingGemma license](https://huggingface.co/google/embeddinggemma-300m))
+
+## Local embedding model (EmbeddingGemma)
+
+`erio-embedding` uses a local EmbeddingGemma model. Model files are fetched at build time from public GitHub Release assets.
+
+- Offline/custom path: set `ERIO_MODEL_DIR` to a directory containing:
+  - `embeddinggemma-300M-Q8_0.gguf`
+  - `tokenizer.json`
+  - `2_Dense/model.safetensors`
+  - `3_Dense/model.safetensors`
+- For maintainers: the CI workflow publishes these assets and requires `HF_TOKEN` (after accepting the
+  [EmbeddingGemma license](https://huggingface.co/google/embeddinggemma-300m)).
 
 ## Running examples
 
@@ -50,8 +60,6 @@ cargo run -p react-agent -- --prompt "Please uppercase the word hello"
 cargo run -p plan-execute-agent -- --prompt "Add 10 and 20, then multiply by 3"
 cargo run -p multi-agent-chat -- --prompt "Explain why Rust is great"
 cargo run -p file-watcher-agent -- --files README.md
-
-export HF_TOKEN=hf_...
 cargo run -p rag-agent -- --query "What is erio?" --documents README.md
 ```
 

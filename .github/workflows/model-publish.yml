@@ -1,0 +1,83 @@
+name: Publish Embedding Model Assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "GitHub release tag for model assets"
+        required: false
+        default: "models-v1"
+  push:
+    tags:
+      - "v*"
+      - "models-*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish-model-assets:
+    runs-on: ubuntu-latest
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      RELEASE_TAG: ${{ github.event.inputs.release_tag || github.ref_name || 'models-v1' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify token exists
+        run: |
+          if [ -z "${HF_TOKEN}" ]; then
+            echo "HF_TOKEN secret is required for gated model download" >&2
+            exit 1
+          fi
+
+      - name: Install Hugging Face Hub client
+        run: python3 -m pip install --upgrade "huggingface_hub>=0.28"
+
+      - name: Download required model files from Hugging Face
+        run: |
+          mkdir -p model-assets
+          python3 - <<'PY'
+          import os
+          from huggingface_hub import hf_hub_download
+
+          token = os.environ["HF_TOKEN"]
+
+          to_fetch = [
+              ("ggml-org/embeddinggemma-300M-GGUF", "embeddinggemma-300M-Q8_0.gguf", "model-assets/embeddinggemma-300M-Q8_0.gguf"),
+              ("google/embeddinggemma-300m", "tokenizer.json", "model-assets/tokenizer.json"),
+              ("google/embeddinggemma-300m", "2_Dense/model.safetensors", "model-assets/2_Dense_model.safetensors"),
+              ("google/embeddinggemma-300m", "3_Dense/model.safetensors", "model-assets/3_Dense_model.safetensors"),
+          ]
+
+          for repo, filename, out_path in to_fetch:
+              downloaded = hf_hub_download(
+                  repo_id=repo,
+                  filename=filename,
+                  token=token,
+              )
+              with open(downloaded, "rb") as src, open(out_path, "wb") as dst:
+                  dst.write(src.read())
+          PY
+
+      - name: Ensure release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release create "${RELEASE_TAG}" \
+              --title "Embedding model assets (${RELEASE_TAG})" \
+              --notes "Pre-fetched EmbeddingGemma assets for build-time download."
+          fi
+
+      - name: Upload model assets to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${RELEASE_TAG}" \
+            model-assets/embeddinggemma-300M-Q8_0.gguf \
+            model-assets/tokenizer.json \
+            model-assets/2_Dense_model.safetensors \
+            model-assets/3_Dense_model.safetensors \
+            --clobber

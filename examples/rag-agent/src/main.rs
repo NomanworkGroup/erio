@@ -135,12 +135,10 @@ async fn main() {
 
     println!("Loading local embedding model...");
     let embedding: Arc<dyn EmbeddingEngine> = Arc::new(
-        GemmaEmbedding::new(EmbeddingConfig::default())
-            .await
-            .unwrap_or_else(|e| {
-                eprintln!("Error: failed to load embedding model: {e}");
-                std::process::exit(1);
-            }),
+        GemmaEmbedding::new(EmbeddingConfig::default()).unwrap_or_else(|e| {
+            eprintln!("Error: failed to load embedding model: {e}");
+            std::process::exit(1);
+        }),
     );
 
     let config = ContextConfig {
