@@ -19,7 +19,7 @@ jobs:
   publish-model-assets:
     runs-on: ubuntu-latest
     env:
-      HF_TOKEN: ${{ secrets.HF_TOKEN || vars.HF_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN || secrets.HUGGINGFACE_TOKEN || secrets.HUGGINGFACEHUB_API_TOKEN || vars.HF_TOKEN }}
       RELEASE_TAG: ${{ github.event.inputs.release_tag || github.ref_name || 'models-v1' }}
     steps:
       - name: Checkout
@@ -28,9 +28,11 @@ jobs:
       - name: Diagnose token presence
         run: |
           echo "secrets.HF_TOKEN present: ${{ secrets.HF_TOKEN != '' }}"
+          echo "secrets.HUGGINGFACE_TOKEN present: ${{ secrets.HUGGINGFACE_TOKEN != '' }}"
+          echo "secrets.HUGGINGFACEHUB_API_TOKEN present: ${{ secrets.HUGGINGFACEHUB_API_TOKEN != '' }}"
           echo "vars.HF_TOKEN present: ${{ vars.HF_TOKEN != '' }}"
           if [ -z "${HF_TOKEN}" ]; then
-            echo "HF_TOKEN is required for gated model download (Actions secret HF_TOKEN recommended; Actions variable HF_TOKEN also supported)." >&2
+            echo "HF token is required for gated model download. Configure one of: Actions secret HF_TOKEN / HUGGINGFACE_TOKEN / HUGGINGFACEHUB_API_TOKEN (recommended), or Actions variable HF_TOKEN (supported)." >&2
             exit 1
           fi
 
