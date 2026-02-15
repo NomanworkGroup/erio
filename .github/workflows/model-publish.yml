@@ -19,7 +19,7 @@ jobs:
   publish-model-assets:
     runs-on: ubuntu-latest
     env:
-      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN || vars.HF_TOKEN }}
       RELEASE_TAG: ${{ github.event.inputs.release_tag || github.ref_name || 'models-v1' }}
     steps:
       - name: Checkout
@@ -28,7 +28,7 @@ jobs:
       - name: Verify token exists
         run: |
           if [ -z "${HF_TOKEN}" ]; then
-            echo "HF_TOKEN secret is required for gated model download" >&2
+            echo "HF_TOKEN is required for gated model download (Actions secret HF_TOKEN recommended; Actions variable HF_TOKEN also supported)." >&2
             exit 1
           fi
 
