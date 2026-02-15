@@ -1,7 +1,7 @@
 //! Context store backed by `LanceDB`.
 
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use arrow_array::types::Float32Type;
 use arrow_array::{FixedSizeListArray, RecordBatch, RecordBatchIterator, StringArray};
@@ -82,11 +82,13 @@ impl ContextStore {
             .await
             .map_err(|e| ContextStoreError::Embedding(e.to_string()))?;
 
-        let dims = i32::try_from(self.embedding.dimensions()).map_err(|e| {
-            ContextStoreError::InvalidInput(format!("bad dimensions: {e}"))
-        })?;
+        let dims = i32::try_from(self.embedding.dimensions())
+            .map_err(|e| ContextStoreError::InvalidInput(format!("bad dimensions: {e}")))?;
 
-        let schema = self.table.schema().await
+        let schema = self
+            .table
+            .schema()
+            .await
             .map_err(|e| ContextStoreError::Storage(e.to_string()))?;
 
         let batch = RecordBatch::try_new(
@@ -107,7 +109,9 @@ impl ContextStore {
 
         let batches = RecordBatchIterator::new(
             vec![Ok(batch)],
-            self.table.schema().await
+            self.table
+                .schema()
+                .await
                 .map_err(|e| ContextStoreError::Storage(e.to_string()))?,
         );
 
@@ -126,7 +130,10 @@ impl ContextStore {
         k: usize,
         filter: Option<String>,
     ) -> Result<Vec<SearchResult>, ContextStoreError> {
-        let count = self.table.count_rows(None).await
+        let count = self
+            .table
+            .count_rows(None)
+            .await
             .map_err(|e| ContextStoreError::Storage(e.to_string()))?;
         if count == 0 {
             return Ok(vec![]);
@@ -191,7 +198,10 @@ impl ContextStore {
     }
 
     pub async fn stats(&self) -> Result<StorageStats, ContextStoreError> {
-        let count = self.table.count_rows(None).await
+        let count = self
+            .table
+            .count_rows(None)
+            .await
             .map_err(|e| ContextStoreError::Storage(e.to_string()))?;
         Ok(StorageStats {
             document_count: count,
@@ -202,14 +212,19 @@ impl ContextStore {
         let escaped = id.replace('\'', "''");
         let filter = format!("id = '{escaped}'");
 
-        let count_before = self.table.count_rows(Some(filter.clone())).await
+        let count_before = self
+            .table
+            .count_rows(Some(filter.clone()))
+            .await
             .map_err(|e| ContextStoreError::Storage(e.to_string()))?;
 
         if count_before == 0 {
             return Err(ContextStoreError::NotFound(id.to_string()));
         }
 
-        self.table.delete(&filter).await
+        self.table
+            .delete(&filter)
+            .await
             .map_err(|e| ContextStoreError::Storage(e.to_string()))?;
 
         Ok(())
@@ -245,10 +260,7 @@ mod tests {
             ])
         }
 
-        async fn embed_batch(
-            &self,
-            texts: &[&str],
-        ) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+        async fn embed_batch(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
             let mut results = Vec::with_capacity(texts.len());
             for text in texts {
                 results.push(self.embed(text).await?);
@@ -288,7 +300,10 @@ mod tests {
         let store = ContextStore::new(test_config(&dir), fake_embedding())
             .await
             .unwrap();
-        let id = store.add("hello world", serde_json::json!({})).await.unwrap();
+        let id = store
+            .add("hello world", serde_json::json!({}))
+            .await
+            .unwrap();
         assert!(!id.is_empty());
     }
 
@@ -322,8 +337,14 @@ mod tests {
         let store = ContextStore::new(test_config(&dir), fake_embedding())
             .await
             .unwrap();
-        store.add("hello world", serde_json::json!({})).await.unwrap();
-        store.add("hello there", serde_json::json!({})).await.unwrap();
+        store
+            .add("hello world", serde_json::json!({}))
+            .await
+            .unwrap();
+        store
+            .add("hello there", serde_json::json!({}))
+            .await
+            .unwrap();
         store.add("goodbye", serde_json::json!({})).await.unwrap();
 
         let results = store.search("hello", 2, None).await.unwrap();
@@ -378,7 +399,10 @@ mod tests {
         let store = ContextStore::new(test_config(&dir), fake_embedding())
             .await
             .unwrap();
-        let id = store.add("to be deleted", serde_json::json!({})).await.unwrap();
+        let id = store
+            .add("to be deleted", serde_json::json!({}))
+            .await
+            .unwrap();
 
         store.delete(&id).await.unwrap();
 
@@ -404,9 +428,18 @@ mod tests {
         let store = ContextStore::new(test_config(&dir), fake_embedding())
             .await
             .unwrap();
-        store.add("hello alpha", serde_json::json!({"source": "docs"})).await.unwrap();
-        store.add("hello beta", serde_json::json!({"source": "code"})).await.unwrap();
-        store.add("hello gamma", serde_json::json!({"source": "docs"})).await.unwrap();
+        store
+            .add("hello alpha", serde_json::json!({"source": "docs"}))
+            .await
+            .unwrap();
+        store
+            .add("hello beta", serde_json::json!({"source": "code"}))
+            .await
+            .unwrap();
+        store
+            .add("hello gamma", serde_json::json!({"source": "docs"}))
+            .await
+            .unwrap();
 
         let filter = "metadata LIKE '%\"source\":\"docs\"%'".to_string();
         let results = store.search("hello", 10, Some(filter)).await.unwrap();
@@ -422,7 +455,10 @@ mod tests {
         let store = ContextStore::new(test_config(&dir), fake_embedding())
             .await
             .unwrap();
-        store.add("hello", serde_json::json!({"source": "docs"})).await.unwrap();
+        store
+            .add("hello", serde_json::json!({"source": "docs"}))
+            .await
+            .unwrap();
 
         let filter = "metadata LIKE '%\"source\":\"nonexistent\"%'".to_string();
         let results = store.search("hello", 10, Some(filter)).await.unwrap();

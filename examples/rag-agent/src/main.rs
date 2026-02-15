@@ -33,7 +33,11 @@ struct Cli {
     documents: Vec<String>,
 
     /// OpenAI-compatible API base URL.
-    #[arg(long, env = "OPENAI_BASE_URL", default_value = "https://api.openai.com/v1")]
+    #[arg(
+        long,
+        env = "OPENAI_BASE_URL",
+        default_value = "https://api.openai.com/v1"
+    )]
     base_url: String,
 
     /// API key (reads from `OPENAI_API_KEY` env var by default).

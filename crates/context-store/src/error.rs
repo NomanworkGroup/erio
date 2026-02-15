@@ -95,7 +95,10 @@ mod tests {
     fn converts_to_core_error() {
         let err = ContextStoreError::Storage("test".into());
         let core_err: erio_core::CoreError = err.into();
-        assert!(matches!(core_err, erio_core::CoreError::ContextStore { .. }));
+        assert!(matches!(
+            core_err,
+            erio_core::CoreError::ContextStore { .. }
+        ));
     }
 
     #[test]

@@ -94,7 +94,9 @@ impl Message {
     pub fn tool_result(call_id: impl Into<String>, result: impl Into<String>) -> Self {
         Self {
             role: Role::Tool,
-            content: vec![Content::Text { text: result.into() }],
+            content: vec![Content::Text {
+                text: result.into(),
+            }],
             tool_call_id: Some(call_id.into()),
         }
     }
@@ -132,17 +134,32 @@ mod tests {
     #[test]
     fn role_serializes_to_lowercase() {
         assert_eq!(serde_json::to_string(&Role::User).unwrap(), "\"user\"");
-        assert_eq!(serde_json::to_string(&Role::Assistant).unwrap(), "\"assistant\"");
+        assert_eq!(
+            serde_json::to_string(&Role::Assistant).unwrap(),
+            "\"assistant\""
+        );
         assert_eq!(serde_json::to_string(&Role::System).unwrap(), "\"system\"");
         assert_eq!(serde_json::to_string(&Role::Tool).unwrap(), "\"tool\"");
     }
 
     #[test]
     fn role_deserializes_from_lowercase() {
-        assert_eq!(serde_json::from_str::<Role>("\"user\"").unwrap(), Role::User);
-        assert_eq!(serde_json::from_str::<Role>("\"assistant\"").unwrap(), Role::Assistant);
-        assert_eq!(serde_json::from_str::<Role>("\"system\"").unwrap(), Role::System);
-        assert_eq!(serde_json::from_str::<Role>("\"tool\"").unwrap(), Role::Tool);
+        assert_eq!(
+            serde_json::from_str::<Role>("\"user\"").unwrap(),
+            Role::User
+        );
+        assert_eq!(
+            serde_json::from_str::<Role>("\"assistant\"").unwrap(),
+            Role::Assistant
+        );
+        assert_eq!(
+            serde_json::from_str::<Role>("\"system\"").unwrap(),
+            Role::System
+        );
+        assert_eq!(
+            serde_json::from_str::<Role>("\"tool\"").unwrap(),
+            Role::Tool
+        );
     }
 
     // === Message Construction Tests ===
@@ -184,7 +201,9 @@ mod tests {
 
     #[test]
     fn content_text_returns_text() {
-        let content = Content::Text { text: "hello".into() };
+        let content = Content::Text {
+            text: "hello".into(),
+        };
         assert_eq!(content.as_text(), Some("hello"));
     }
 
@@ -248,7 +267,9 @@ mod tests {
         let original = Message {
             role: Role::Assistant,
             content: vec![
-                Content::Text { text: "I'll help you with that.".into() },
+                Content::Text {
+                    text: "I'll help you with that.".into(),
+                },
                 Content::ToolCall(ToolCall {
                     id: "call_1".into(),
                     name: "shell".into(),
@@ -272,8 +293,12 @@ mod tests {
         let msg = Message {
             role: Role::Assistant,
             content: vec![
-                Content::Text { text: "First".into() },
-                Content::Text { text: "Second".into() },
+                Content::Text {
+                    text: "First".into(),
+                },
+                Content::Text {
+                    text: "Second".into(),
+                },
             ],
             tool_call_id: None,
         };
@@ -301,7 +326,9 @@ mod tests {
         let msg = Message {
             role: Role::Assistant,
             content: vec![
-                Content::Text { text: "Let me help".into() },
+                Content::Text {
+                    text: "Let me help".into(),
+                },
                 Content::ToolCall(ToolCall {
                     id: "call_1".into(),
                     name: "shell".into(),

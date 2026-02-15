@@ -21,11 +21,7 @@ pub struct Event {
 
 impl Event {
     /// Creates a new event with the given source, type, and data.
-    pub fn new(
-        source: impl Into<String>,
-        event_type: impl Into<String>,
-        data: Value,
-    ) -> Self {
+    pub fn new(source: impl Into<String>, event_type: impl Into<String>, data: Value) -> Self {
         Self {
             id: uuid_v4(),
             source: source.into(),
@@ -90,8 +86,7 @@ mod tests {
 
     #[test]
     fn with_metadata_attaches_metadata() {
-        let event = Event::new("src", "type", json!(1))
-            .with_metadata(json!({"priority": "high"}));
+        let event = Event::new("src", "type", json!(1)).with_metadata(json!({"priority": "high"}));
         assert_eq!(event.metadata, Some(json!({"priority": "high"})));
     }
 

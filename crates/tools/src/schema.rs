@@ -1,7 +1,7 @@
 //! Tool schema types for JSON Schema generation.
 
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::HashMap;
 
 /// JSON Schema property types.
@@ -57,9 +57,7 @@ impl ToolSchema {
 
     /// Returns `true` if the given property is required.
     pub fn is_required(&self, name: &str) -> bool {
-        self.properties
-            .get(name)
-            .is_some_and(|p| p.required)
+        self.properties.get(name).is_some_and(|p| p.required)
     }
 
     /// Returns the number of properties in the schema.

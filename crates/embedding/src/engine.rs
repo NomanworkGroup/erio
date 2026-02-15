@@ -74,9 +74,8 @@ mod tests {
 
     #[tokio::test]
     async fn mock_engine_can_simulate_errors() {
-        let mock = MockEngine::returning_err(|| {
-            EmbeddingError::Inference("simulated failure".into())
-        });
+        let mock =
+            MockEngine::returning_err(|| EmbeddingError::Inference("simulated failure".into()));
         let result = mock.embed("test").await;
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), EmbeddingError::Inference(_)));

@@ -7,7 +7,7 @@ use std::path::Path;
 
 use candle_core::quantized::gguf_file;
 use candle_core::quantized::{QMatMul, QTensor};
-use candle_core::{DType, Device, IndexOp, Module, Result as CandleResult, Tensor, D};
+use candle_core::{D, DType, Device, IndexOp, Module, Result as CandleResult, Tensor};
 use candle_nn::Linear;
 
 use crate::error::EmbeddingError;
@@ -30,7 +30,7 @@ pub fn mean_pool(embeddings: &Tensor, attention_mask: &Tensor) -> CandleResult<T
     let masked = embeddings.broadcast_mul(&mask)?;
     let summed = masked.sum(1)?; // [batch, hidden]
     let counts = mask.sum(1)?; // [batch, 1]
-                               // Clamp to avoid division by zero
+    // Clamp to avoid division by zero
     let counts = counts.clamp(1e-9, f64::MAX)?;
     summed.broadcast_div(&counts)
 }

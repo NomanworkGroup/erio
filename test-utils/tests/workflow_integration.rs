@@ -84,15 +84,17 @@ impl Step for LlmStep {
     }
 
     async fn execute(&self, _ctx: &mut WorkflowContext) -> Result<StepOutput, WorkflowError> {
-        let request = CompletionRequest::new("mock-model")
-            .message(erio_core::Message::user(&self.prompt));
+        let request =
+            CompletionRequest::new("mock-model").message(erio_core::Message::user(&self.prompt));
 
-        let response = self.provider.complete(request).await.map_err(|e| {
-            WorkflowError::StepFailed {
-                step_id: self.step_id.clone(),
-                message: e.to_string(),
-            }
-        })?;
+        let response =
+            self.provider
+                .complete(request)
+                .await
+                .map_err(|e| WorkflowError::StepFailed {
+                    step_id: self.step_id.clone(),
+                    message: e.to_string(),
+                })?;
 
         let content = response.content.unwrap_or_default();
 
@@ -181,10 +183,7 @@ impl Tool for UppercaseTool {
             .build()
     }
 
-    async fn execute(
-        &self,
-        params: serde_json::Value,
-    ) -> Result<ToolResult, erio_core::ToolError> {
+    async fn execute(&self, params: serde_json::Value) -> Result<ToolResult, erio_core::ToolError> {
         let text = params["text"]
             .as_str()
             .ok_or_else(|| erio_core::ToolError::InvalidParams("missing 'text'".into()))?;
@@ -233,7 +232,10 @@ async fn tool_step_executes_in_workflow() {
 
     let workflow = Workflow::builder()
         .step(ParamStep, &[])
-        .step(ToolStep::new("run_tool", registry, "uppercase"), &["params"])
+        .step(
+            ToolStep::new("run_tool", registry, "uppercase"),
+            &["params"],
+        )
         .build()
         .unwrap();
 
@@ -356,10 +358,7 @@ async fn step_context_passes_output_to_next() {
         fn id(&self) -> &str {
             &self.id
         }
-        async fn execute(
-            &self,
-            ctx: &mut WorkflowContext,
-        ) -> Result<StepOutput, WorkflowError> {
+        async fn execute(&self, ctx: &mut WorkflowContext) -> Result<StepOutput, WorkflowError> {
             let prev = ctx
                 .output(&self.dep_id)
                 .map(|o| format!("received: {}", o.value()))

@@ -52,11 +52,7 @@ pub fn conversation_with_tool_use() -> Vec<Message> {
     vec![
         system_message("You are a helpful assistant with tool access."),
         user_message("What files are in the current directory?"),
-        assistant_with_tool_call(
-            "I'll check that for you.",
-            "shell",
-            "call_001",
-        ),
+        assistant_with_tool_call("I'll check that for you.", "shell", "call_001"),
         tool_result_message("call_001", "file1.txt\nfile2.txt\nREADME.md"),
         assistant_message("The current directory contains: file1.txt, file2.txt, and README.md"),
     ]

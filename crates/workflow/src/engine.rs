@@ -6,11 +6,11 @@ use tokio::sync::Mutex;
 
 use std::path::Path;
 
+use crate::WorkflowError;
 use crate::builder::Workflow;
 use crate::checkpoint::Checkpoint;
 use crate::context::WorkflowContext;
 use crate::step::StepOutput;
-use crate::WorkflowError;
 
 /// Executes workflows by resolving the DAG and running steps.
 ///
@@ -42,9 +42,7 @@ impl WorkflowEngine {
             if group.len() == 1 {
                 // Single step — run directly (no spawn overhead)
                 let step_id = group[0];
-                let step = workflow
-                    .step(step_id)
-                    .expect("DAG validated step exists");
+                let step = workflow.step(step_id).expect("DAG validated step exists");
 
                 let mut ctx_guard = ctx.lock().await;
                 match step.execute(&mut ctx_guard).await {
@@ -60,9 +58,7 @@ impl WorkflowEngine {
                 let mut handles = Vec::with_capacity(group.len());
 
                 for step_id in &group {
-                    let step = workflow
-                        .step(step_id)
-                        .expect("DAG validated step exists");
+                    let step = workflow.step(step_id).expect("DAG validated step exists");
                     let ctx_clone = ctx.clone();
                     let failed_clone = failed.clone();
                     let step_id_owned = (*step_id).to_string();
@@ -229,12 +225,12 @@ impl WorkflowEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::WorkflowError;
     use crate::builder::Workflow;
     use crate::context::WorkflowContext;
     use crate::step::{Step, StepOutput};
-    use crate::WorkflowError;
-    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::Duration;
 
     // === Mock Steps ===

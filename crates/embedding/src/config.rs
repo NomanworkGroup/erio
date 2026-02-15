@@ -113,9 +113,7 @@ mod tests {
 
     #[test]
     fn builder_sets_max_input_length() {
-        let config = EmbeddingConfig::builder()
-            .max_input_length(1024)
-            .build();
+        let config = EmbeddingConfig::builder().max_input_length(1024).build();
         assert_eq!(config.max_input_length, 1024);
     }
 
@@ -127,9 +125,7 @@ mod tests {
 
     #[test]
     fn builder_sets_model_id() {
-        let config = EmbeddingConfig::builder()
-            .model_id("custom/model")
-            .build();
+        let config = EmbeddingConfig::builder().model_id("custom/model").build();
         assert_eq!(config.model_id, "custom/model");
     }
 

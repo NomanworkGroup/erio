@@ -67,10 +67,7 @@ impl RemoteEmbedding {
 
         let status = response.status();
         if !status.is_success() {
-            let body_text = response
-                .text()
-                .await
-                .unwrap_or_else(|_| "unknown".into());
+            let body_text = response.text().await.unwrap_or_else(|_| "unknown".into());
             return Err(EmbeddingError::Inference(format!(
                 "API error {status}: {body_text}"
             )));
@@ -211,14 +208,13 @@ mod tests {
         Mock::given(method("POST"))
             .and(path("/v1/embeddings"))
             .respond_with(
-                ResponseTemplate::new(200)
-                    .set_body_json(mock_response(vec![vec![1.0, 2.0, 3.0]])),
+                ResponseTemplate::new(200).set_body_json(mock_response(vec![vec![1.0, 2.0, 3.0]])),
             )
             .mount(&server)
             .await;
 
-        let engine = RemoteEmbedding::new(server.uri(), "key", test_config())
-            .with_client(no_proxy_client());
+        let engine =
+            RemoteEmbedding::new(server.uri(), "key", test_config()).with_client(no_proxy_client());
         let result = engine.embed("test").await.unwrap();
         assert_eq!(result.len(), 3);
         assert!((result[0] - 1.0).abs() < f32::EPSILON);
@@ -236,8 +232,8 @@ mod tests {
             .mount(&server)
             .await;
 
-        let engine = RemoteEmbedding::new(server.uri(), "key", test_config())
-            .with_client(no_proxy_client());
+        let engine =
+            RemoteEmbedding::new(server.uri(), "key", test_config()).with_client(no_proxy_client());
         let results = engine.embed_batch(&["hello", "world"]).await.unwrap();
         assert_eq!(results.len(), 2);
         assert_eq!(results[0], vec![0.1, 0.2, 0.3]);
@@ -249,9 +245,7 @@ mod tests {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/v1/embeddings"))
-            .respond_with(
-                ResponseTemplate::new(401).set_body_string("Unauthorized"),
-            )
+            .respond_with(ResponseTemplate::new(401).set_body_string("Unauthorized"))
             .mount(&server)
             .await;
 
@@ -271,14 +265,12 @@ mod tests {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/v1/embeddings"))
-            .respond_with(
-                ResponseTemplate::new(500).set_body_string("Internal Server Error"),
-            )
+            .respond_with(ResponseTemplate::new(500).set_body_string("Internal Server Error"))
             .mount(&server)
             .await;
 
-        let engine = RemoteEmbedding::new(server.uri(), "key", test_config())
-            .with_client(no_proxy_client());
+        let engine =
+            RemoteEmbedding::new(server.uri(), "key", test_config()).with_client(no_proxy_client());
         let result = engine.embed("test").await;
         assert!(result.is_err());
         let err = result.unwrap_err();

@@ -50,7 +50,10 @@ impl ToolError {
 #[derive(Debug, Error)]
 pub enum CoreError {
     #[error("{}", llm_error_display(.message, .status))]
-    Llm { message: String, status: Option<u16> },
+    Llm {
+        message: String,
+        status: Option<u16>,
+    },
 
     #[error("Tool error: {0}")]
     Tool(#[from] ToolError),
@@ -115,7 +118,10 @@ mod tests {
     #[test]
     fn tool_error_invalid_params_displays_message() {
         let err = ToolError::InvalidParams("missing 'command' field".into());
-        assert_eq!(err.to_string(), "Invalid parameters: missing 'command' field");
+        assert_eq!(
+            err.to_string(),
+            "Invalid parameters: missing 'command' field"
+        );
     }
 
     #[test]

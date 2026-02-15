@@ -52,7 +52,9 @@ impl ToolRegistry {
 
     /// Executes a tool by name with the given parameters.
     pub async fn execute(&self, name: &str, params: Value) -> Result<ToolResult, ToolError> {
-        let tool = self.get(name).ok_or_else(|| ToolError::NotFound(name.into()))?;
+        let tool = self
+            .get(name)
+            .ok_or_else(|| ToolError::NotFound(name.into()))?;
         tool.execute(params).await
     }
 }

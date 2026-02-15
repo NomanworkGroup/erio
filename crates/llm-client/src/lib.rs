@@ -162,17 +162,15 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn openai_provider_sends_correct_request() {
+        use wiremock::matchers::{header, method, path};
         use wiremock::{Mock, MockServer, ResponseTemplate};
-        use wiremock::matchers::{method, path, header};
 
         let mock_server = MockServer::start().await;
 
         Mock::given(method("POST"))
             .and(path("/chat/completions"))
             .and(header("authorization", "Bearer test-key"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(valid_openai_response()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(valid_openai_response()))
             .expect(1)
             .mount(&mock_server)
             .await;
@@ -180,8 +178,7 @@ mod tests {
         let provider = OpenAiProvider::new(mock_server.uri(), "test-key")
             .with_client(no_proxy_client())
             .with_retry(erio_core::RetryConfig::no_retry());
-        let request = CompletionRequest::new("gpt-4")
-            .message(erio_core::Message::user("Hello"));
+        let request = CompletionRequest::new("gpt-4").message(erio_core::Message::user("Hello"));
 
         let response = provider.complete(request).await.unwrap();
         assert_eq!(response.content, Some("Hello from GPT!".into()));
@@ -190,16 +187,14 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn openai_provider_parses_tool_calls() {
-        use wiremock::{Mock, MockServer, ResponseTemplate};
         use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
 
         let mock_server = MockServer::start().await;
 
         Mock::given(method("POST"))
             .and(path("/chat/completions"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(tool_call_openai_response()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(tool_call_openai_response()))
             .mount(&mock_server)
             .await;
 
@@ -218,8 +213,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn openai_provider_returns_auth_error_on_401() {
-        use wiremock::{Mock, MockServer, ResponseTemplate};
         use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
 
         let mock_server = MockServer::start().await;
 
@@ -232,8 +227,7 @@ mod tests {
         let provider = OpenAiProvider::new(mock_server.uri(), "bad-key")
             .with_client(no_proxy_client())
             .with_retry(erio_core::RetryConfig::no_retry());
-        let request = CompletionRequest::new("gpt-4")
-            .message(erio_core::Message::user("Hello"));
+        let request = CompletionRequest::new("gpt-4").message(erio_core::Message::user("Hello"));
 
         let result = provider.complete(request).await;
         assert!(matches!(result, Err(LlmError::Auth)));
@@ -241,8 +235,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn openai_provider_returns_rate_limited_on_429() {
-        use wiremock::{Mock, MockServer, ResponseTemplate};
         use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
 
         let mock_server = MockServer::start().await;
 
@@ -255,8 +249,7 @@ mod tests {
         let provider = OpenAiProvider::new(mock_server.uri(), "key")
             .with_client(no_proxy_client())
             .with_retry(erio_core::RetryConfig::no_retry());
-        let request = CompletionRequest::new("gpt-4")
-            .message(erio_core::Message::user("Hello"));
+        let request = CompletionRequest::new("gpt-4").message(erio_core::Message::user("Hello"));
 
         let result = provider.complete(request).await;
         assert!(matches!(result, Err(LlmError::RateLimited { .. })));
@@ -264,8 +257,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn openai_provider_returns_api_error_on_500() {
-        use wiremock::{Mock, MockServer, ResponseTemplate};
         use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
 
         let mock_server = MockServer::start().await;
 
@@ -278,8 +271,7 @@ mod tests {
         let provider = OpenAiProvider::new(mock_server.uri(), "key")
             .with_client(no_proxy_client())
             .with_retry(erio_core::RetryConfig::no_retry());
-        let request = CompletionRequest::new("gpt-4")
-            .message(erio_core::Message::user("Hello"));
+        let request = CompletionRequest::new("gpt-4").message(erio_core::Message::user("Hello"));
 
         let result = provider.complete(request).await;
         assert!(matches!(result, Err(LlmError::Api { status: 500, .. })));
@@ -287,8 +279,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn openai_provider_retries_on_429_then_succeeds() {
-        use wiremock::{Mock, MockServer, ResponseTemplate};
         use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
 
         let mock_server = MockServer::start().await;
 
@@ -303,9 +295,7 @@ mod tests {
 
         Mock::given(method("POST"))
             .and(path("/chat/completions"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(valid_openai_response()),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(valid_openai_response()))
             .expect(1)
             .mount(&mock_server)
             .await;
@@ -318,8 +308,7 @@ mod tests {
                     .initial_delay(Duration::from_millis(1))
                     .build(),
             );
-        let request = CompletionRequest::new("gpt-4")
-            .message(erio_core::Message::user("Hello"));
+        let request = CompletionRequest::new("gpt-4").message(erio_core::Message::user("Hello"));
 
         let response = provider.complete(request).await.unwrap();
         assert_eq!(response.content, Some("Hello from GPT!".into()));
@@ -327,8 +316,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn openai_provider_does_not_retry_on_401() {
-        use wiremock::{Mock, MockServer, ResponseTemplate};
         use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
 
         let mock_server = MockServer::start().await;
 
@@ -347,8 +336,7 @@ mod tests {
                     .initial_delay(Duration::from_millis(1))
                     .build(),
             );
-        let request = CompletionRequest::new("gpt-4")
-            .message(erio_core::Message::user("Hello"));
+        let request = CompletionRequest::new("gpt-4").message(erio_core::Message::user("Hello"));
 
         let result = provider.complete(request).await;
         assert!(matches!(result, Err(LlmError::Auth)));
@@ -356,8 +344,8 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn openai_provider_exhausts_retries_on_persistent_429() {
-        use wiremock::{Mock, MockServer, ResponseTemplate};
         use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
 
         let mock_server = MockServer::start().await;
 
@@ -376,8 +364,7 @@ mod tests {
                     .initial_delay(Duration::from_millis(1))
                     .build(),
             );
-        let request = CompletionRequest::new("gpt-4")
-            .message(erio_core::Message::user("Hello"));
+        let request = CompletionRequest::new("gpt-4").message(erio_core::Message::user("Hello"));
 
         let result = provider.complete(request).await;
         assert!(matches!(result, Err(LlmError::RateLimited { .. })));
@@ -551,8 +538,7 @@ mod tests {
 
     #[test]
     fn request_builder_adds_message() {
-        let req = CompletionRequest::new("gpt-4")
-            .message(erio_core::Message::user("Hello"));
+        let req = CompletionRequest::new("gpt-4").message(erio_core::Message::user("Hello"));
         assert_eq!(req.messages.len(), 1);
         assert_eq!(req.messages[0].text(), Some("Hello"));
     }

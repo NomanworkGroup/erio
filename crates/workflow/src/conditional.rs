@@ -1,8 +1,8 @@
 //! Conditional step that executes based on a runtime predicate.
 
+use crate::WorkflowError;
 use crate::context::WorkflowContext;
 use crate::step::{Step, StepOutput};
-use crate::WorkflowError;
 
 /// A step that only executes its inner step when a condition is met.
 ///

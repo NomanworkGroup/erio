@@ -74,10 +74,7 @@ mod tests {
             expected: 384,
             got: 768,
         };
-        assert_eq!(
-            err.to_string(),
-            "Dimension mismatch: expected 384, got 768"
-        );
+        assert_eq!(err.to_string(), "Dimension mismatch: expected 384, got 768");
     }
 
     // === Retryable Tests ===

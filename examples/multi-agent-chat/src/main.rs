@@ -26,7 +26,11 @@ struct Cli {
     prompt: String,
 
     /// OpenAI-compatible API base URL.
-    #[arg(long, env = "OPENAI_BASE_URL", default_value = "https://api.openai.com/v1")]
+    #[arg(
+        long,
+        env = "OPENAI_BASE_URL",
+        default_value = "https://api.openai.com/v1"
+    )]
     base_url: String,
 
     /// API key (reads from `OPENAI_API_KEY` env var by default).
@@ -154,12 +158,13 @@ async fn run_coordinator(
     for agent in &agents {
         agent.set_prompt(accumulated.clone()).await;
 
-        let event = agent.next_event().await.map_err(|e| {
-            CoordinatorError::AgentLlm {
+        let event = agent
+            .next_event()
+            .await
+            .map_err(|e| CoordinatorError::AgentLlm {
                 agent: agent.name.clone(),
                 source: LlmError::InvalidResponse(e.to_string()),
-            }
-        })?;
+            })?;
 
         let Some(event) = event else {
             continue;

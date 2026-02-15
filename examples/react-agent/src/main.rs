@@ -25,7 +25,11 @@ struct Cli {
     prompt: String,
 
     /// OpenAI-compatible API base URL.
-    #[arg(long, env = "OPENAI_BASE_URL", default_value = "https://api.openai.com/v1")]
+    #[arg(
+        long,
+        env = "OPENAI_BASE_URL",
+        default_value = "https://api.openai.com/v1"
+    )]
     base_url: String,
 
     /// API key (reads from `OPENAI_API_KEY` env var by default).
@@ -155,10 +159,7 @@ impl Tool for UppercaseTool {
             .property("text", PropertyType::String, "Text to uppercase", true)
             .build()
     }
-    async fn execute(
-        &self,
-        params: serde_json::Value,
-    ) -> Result<ToolResult, erio_core::ToolError> {
+    async fn execute(&self, params: serde_json::Value) -> Result<ToolResult, erio_core::ToolError> {
         let text = params["text"].as_str().unwrap_or("");
         Ok(ToolResult::success(text.to_uppercase()))
     }

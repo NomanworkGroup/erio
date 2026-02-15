@@ -82,7 +82,10 @@ mod tests {
 
     #[test]
     fn fact_verification_description() {
-        assert_eq!(TaskType::FactVerification.description(), "fact verification");
+        assert_eq!(
+            TaskType::FactVerification.description(),
+            "fact verification"
+        );
     }
 
     #[test]

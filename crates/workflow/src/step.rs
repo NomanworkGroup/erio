@@ -1,7 +1,7 @@
 //! Step trait for workflow execution units.
 
-use crate::context::WorkflowContext;
 use crate::WorkflowError;
+use crate::context::WorkflowContext;
 
 /// A single execution unit in a workflow.
 #[async_trait::async_trait]
@@ -120,8 +120,7 @@ mod tests {
 
     #[test]
     fn step_output_with_metadata() {
-        let output =
-            StepOutput::new("result").with_metadata(serde_json::json!({"exit_code": 0}));
+        let output = StepOutput::new("result").with_metadata(serde_json::json!({"exit_code": 0}));
         assert_eq!(output.value(), "result");
         assert!(output.metadata().is_some());
     }

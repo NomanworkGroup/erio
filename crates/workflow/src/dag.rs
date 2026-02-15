@@ -47,9 +47,7 @@ impl Dag {
     /// Returns an error if the node already exists or any dependency is unknown.
     pub fn add_node(&mut self, id: &str, deps: &[&str]) -> Result<(), WorkflowError> {
         if self.dependencies.contains_key(id) {
-            return Err(WorkflowError::DuplicateStep {
-                step_id: id.into(),
-            });
+            return Err(WorkflowError::DuplicateStep { step_id: id.into() });
         }
 
         for dep in deps {
@@ -401,9 +399,11 @@ mod tests {
                         } else {
                             proptest::collection::vec(0..i, 0..=i.min(4))
                                 .prop_map(move |deps| {
-                                    let unique: Vec<usize> =
-                                        deps.into_iter().collect::<std::collections::HashSet<_>>()
-                                            .into_iter().collect();
+                                    let unique: Vec<usize> = deps
+                                        .into_iter()
+                                        .collect::<std::collections::HashSet<_>>()
+                                        .into_iter()
+                                        .collect();
                                     (i, unique)
                                 })
                                 .boxed()
@@ -421,11 +421,12 @@ mod tests {
                     .map(|i| {
                         proptest::collection::vec(0..n, 0..=3)
                             .prop_map(move |deps| {
-                                let unique: Vec<usize> =
-                                    deps.into_iter()
-                                        .filter(|d| *d != i)
-                                        .collect::<std::collections::HashSet<_>>()
-                                        .into_iter().collect();
+                                let unique: Vec<usize> = deps
+                                    .into_iter()
+                                    .filter(|d| *d != i)
+                                    .collect::<std::collections::HashSet<_>>()
+                                    .into_iter()
+                                    .collect();
                                 (i, unique)
                             })
                             .boxed()

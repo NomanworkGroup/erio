@@ -5,9 +5,9 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+use crate::WorkflowError;
 use crate::context::WorkflowContext;
 use crate::step::StepOutput;
-use crate::WorkflowError;
 
 /// A serializable snapshot of workflow progress.
 ///
@@ -67,11 +67,12 @@ impl Checkpoint {
 
     /// Loads a checkpoint from a JSON file.
     pub async fn load(path: &Path) -> Result<Self, WorkflowError> {
-        let json = tokio::fs::read_to_string(path)
-            .await
-            .map_err(|e| WorkflowError::Checkpoint {
-                message: format!("read failed: {e}"),
-            })?;
+        let json =
+            tokio::fs::read_to_string(path)
+                .await
+                .map_err(|e| WorkflowError::Checkpoint {
+                    message: format!("read failed: {e}"),
+                })?;
         serde_json::from_str(&json).map_err(|e| WorkflowError::Checkpoint {
             message: format!("deserialize failed: {e}"),
         })

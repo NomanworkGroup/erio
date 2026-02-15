@@ -54,7 +54,12 @@ mod tests {
     fn tool_schema_builder_creates_schema() {
         let schema = ToolSchema::builder()
             .property("command", PropertyType::String, "The command to run", true)
-            .property("timeout", PropertyType::Integer, "Timeout in seconds", false)
+            .property(
+                "timeout",
+                PropertyType::Integer,
+                "Timeout in seconds",
+                false,
+            )
             .build();
 
         assert!(schema.has_property("command"));

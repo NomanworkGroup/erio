@@ -28,7 +28,11 @@ struct Cli {
     files: Vec<String>,
 
     /// OpenAI-compatible API base URL.
-    #[arg(long, env = "OPENAI_BASE_URL", default_value = "https://api.openai.com/v1")]
+    #[arg(
+        long,
+        env = "OPENAI_BASE_URL",
+        default_value = "https://api.openai.com/v1"
+    )]
     base_url: String,
 
     /// API key (reads from `OPENAI_API_KEY` env var by default).
@@ -118,7 +122,8 @@ async fn summarise_files(
     max_files: usize,
 ) -> Result<(), WatcherError> {
     let mut rx = bus.subscribe();
-    let system_prompt = "You are a file summariser. Given a file's content, produce a concise summary.";
+    let system_prompt =
+        "You are a file summariser. Given a file's content, produce a concise summary.";
     let mut count = 0;
 
     loop {

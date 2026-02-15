@@ -29,7 +29,8 @@ pub struct ModelFiles {
 }
 
 fn model_files_from_env() -> Result<ModelFiles, EmbeddingError> {
-    let base_dir = std::env::var("ERIO_MODEL_DIR").unwrap_or_else(|_| env!("ERIO_MODEL_DIR").to_owned());
+    let base_dir =
+        std::env::var("ERIO_MODEL_DIR").unwrap_or_else(|_| env!("ERIO_MODEL_DIR").to_owned());
 
     let base = PathBuf::from(base_dir);
     let files = ModelFiles {

@@ -13,10 +13,7 @@ pub enum LlmError {
     },
 
     #[error("API error ({status}): {message}")]
-    Api {
-        status: u16,
-        message: String,
-    },
+    Api { status: u16, message: String },
 
     #[error("Invalid response: {0}")]
     InvalidResponse(String),

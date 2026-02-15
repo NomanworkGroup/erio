@@ -58,8 +58,7 @@ impl OpenAiProvider {
                     .reduce(|a, b| format!("{a}\n{b}"));
 
                 let mut obj = serde_json::json!({ "role": "assistant" });
-                obj["content"] =
-                    text.map_or(serde_json::Value::Null, |t| serde_json::json!(t));
+                obj["content"] = text.map_or(serde_json::Value::Null, |t| serde_json::json!(t));
 
                 let tool_calls: Vec<serde_json::Value> = msg
                     .tool_calls()
@@ -134,10 +133,7 @@ impl OpenAiProvider {
         body
     }
 
-    async fn send_request(
-        &self,
-        body: &serde_json::Value,
-    ) -> Result<CompletionResponse, LlmError> {
+    async fn send_request(&self, body: &serde_json::Value) -> Result<CompletionResponse, LlmError> {
         let url = format!("{}/chat/completions", self.base_url);
 
         let response = self

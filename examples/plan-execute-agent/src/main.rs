@@ -26,7 +26,11 @@ struct Cli {
     prompt: String,
 
     /// OpenAI-compatible API base URL.
-    #[arg(long, env = "OPENAI_BASE_URL", default_value = "https://api.openai.com/v1")]
+    #[arg(
+        long,
+        env = "OPENAI_BASE_URL",
+        default_value = "https://api.openai.com/v1"
+    )]
     base_url: String,
 
     /// API key (reads from `OPENAI_API_KEY` env var by default).
@@ -235,10 +239,7 @@ impl Tool for AddTool {
             .property("b", PropertyType::Integer, "Second number", true)
             .build()
     }
-    async fn execute(
-        &self,
-        params: serde_json::Value,
-    ) -> Result<ToolResult, erio_core::ToolError> {
+    async fn execute(&self, params: serde_json::Value) -> Result<ToolResult, erio_core::ToolError> {
         let a = params["a"].as_i64().unwrap_or(0);
         let b = params["b"].as_i64().unwrap_or(0);
         Ok(ToolResult::success(format!("{}", a + b)))
@@ -261,10 +262,7 @@ impl Tool for MultiplyTool {
             .property("b", PropertyType::Integer, "Second number", true)
             .build()
     }
-    async fn execute(
-        &self,
-        params: serde_json::Value,
-    ) -> Result<ToolResult, erio_core::ToolError> {
+    async fn execute(&self, params: serde_json::Value) -> Result<ToolResult, erio_core::ToolError> {
         let a = params["a"].as_i64().unwrap_or(0);
         let b = params["b"].as_i64().unwrap_or(0);
         Ok(ToolResult::success(format!("{}", a * b)))

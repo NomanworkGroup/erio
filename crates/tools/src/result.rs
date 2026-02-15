@@ -7,15 +7,9 @@ use serde::{Deserialize, Serialize};
 #[serde(untagged)]
 pub enum ToolResult {
     /// Successful execution with content.
-    Success {
-        success: bool,
-        content: String,
-    },
+    Success { success: bool, content: String },
     /// Failed execution with error message.
-    Error {
-        success: bool,
-        error: String,
-    },
+    Error { success: bool, error: String },
 }
 
 impl ToolResult {

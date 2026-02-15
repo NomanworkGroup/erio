@@ -3,9 +3,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::WorkflowError;
 use crate::dag::Dag;
 use crate::step::Step;
-use crate::WorkflowError;
 
 /// A validated workflow ready for execution.
 ///
@@ -95,9 +95,9 @@ impl WorkflowBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::WorkflowError;
     use crate::context::WorkflowContext;
     use crate::step::{Step, StepOutput};
-    use crate::WorkflowError;
 
     // === Mock Step ===
 
