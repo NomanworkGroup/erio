@@ -1,4 +1,7 @@
 //! Erio Embedding - embedding engine abstraction for computing vector embeddings.
+//!
+//! Local embedding engines (e.g. `GemmaEmbedding`) load model files from `ERIO_MODEL_DIR`.
+//! The embedding crate's build script fetches the default model assets at build time.
 
 pub mod config;
 pub mod engine;

@@ -1,4 +1,10 @@
-//! Local embedding engine using GGUF-quantized `EmbeddingGemma` model.
+//! Local embedding engine using the GGUF-quantized `EmbeddingGemma` model.
+//!
+//! This engine never downloads model files at runtime.
+//!
+//! `GemmaEmbedding::new` loads from a local model directory specified by `ERIO_MODEL_DIR`.
+//! The embedding crate's `build.rs` populates this automatically at build time by downloading
+//! public GitHub Release assets, or you can set `ERIO_MODEL_DIR` manually for offline builds.
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -22,46 +28,32 @@ pub struct ModelFiles {
     pub tokenizer_path: PathBuf,
 }
 
-/// Downloads required model files from `HuggingFace` Hub.
-///
-/// Downloads the GGUF backbone from `ggml-org/embeddinggemma-300M-GGUF` and
-/// the dense layers + tokenizer from `google/embeddinggemma-300m`.
-/// Requires `HF_TOKEN` environment variable for the gated Google model.
-pub async fn download_model_files(gguf_filename: &str) -> Result<ModelFiles, EmbeddingError> {
-    let token = std::env::var("HF_TOKEN").ok();
-    let api = hf_hub::api::tokio::ApiBuilder::from_env()
-        .with_token(token)
-        .build()
-        .map_err(|e| EmbeddingError::ModelLoad(format!("failed to create HF API: {e}")))?;
+fn model_files_from_env() -> Result<ModelFiles, EmbeddingError> {
+    let base_dir = std::env::var("ERIO_MODEL_DIR").unwrap_or_else(|_| env!("ERIO_MODEL_DIR").to_owned());
 
-    // Download GGUF backbone (not gated)
-    let gguf_repo = api.model("ggml-org/embeddinggemma-300M-GGUF".to_owned());
-    let gguf_path = gguf_repo
-        .get(gguf_filename)
-        .await
-        .map_err(|e| EmbeddingError::ModelLoad(format!("failed to download GGUF model: {e}")))?;
+    let base = PathBuf::from(base_dir);
+    let files = ModelFiles {
+        gguf_path: base.join("embeddinggemma-300M-Q8_0.gguf"),
+        dense1_path: base.join("2_Dense/model.safetensors"),
+        dense2_path: base.join("3_Dense/model.safetensors"),
+        tokenizer_path: base.join("tokenizer.json"),
+    };
 
-    // Download tokenizer + dense layers from gated Google repo (requires HF_TOKEN)
-    let google_repo = api.model("google/embeddinggemma-300m".to_owned());
-    let tokenizer_path = google_repo
-        .get("tokenizer.json")
-        .await
-        .map_err(|e| EmbeddingError::ModelLoad(format!("failed to download tokenizer: {e}")))?;
-    let dense1_path = google_repo
-        .get("2_Dense/model.safetensors")
-        .await
-        .map_err(|e| EmbeddingError::ModelLoad(format!("failed to download 2_Dense: {e}")))?;
-    let dense2_path = google_repo
-        .get("3_Dense/model.safetensors")
-        .await
-        .map_err(|e| EmbeddingError::ModelLoad(format!("failed to download 3_Dense: {e}")))?;
+    for path in [
+        &files.gguf_path,
+        &files.dense1_path,
+        &files.dense2_path,
+        &files.tokenizer_path,
+    ] {
+        if !path.exists() {
+            return Err(EmbeddingError::ModelLoad(format!(
+                "required model file missing: {}",
+                path.display()
+            )));
+        }
+    }
 
-    Ok(ModelFiles {
-        gguf_path,
-        dense1_path,
-        dense2_path,
-        tokenizer_path,
-    })
+    Ok(files)
 }
 
 /// Local embedding engine using quantized `EmbeddingGemma` model via candle.
@@ -71,9 +63,9 @@ pub struct GemmaEmbedding {
 }
 
 impl GemmaEmbedding {
-    /// Creates a new `GemmaEmbedding` by downloading and loading the model.
-    pub async fn new(config: EmbeddingConfig) -> Result<Self, EmbeddingError> {
-        let model_files = download_model_files("embeddinggemma-300M-Q8_0.gguf").await?;
+    /// Creates a new `GemmaEmbedding` from build-time prepared model files.
+    pub fn new(config: EmbeddingConfig) -> Result<Self, EmbeddingError> {
+        let model_files = model_files_from_env()?;
         Self::from_files(config, &model_files)
     }
 
@@ -134,6 +126,9 @@ impl EmbeddingEngine for GemmaEmbedding {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use std::sync::{Mutex, OnceLock};
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     // All tests that require model download are #[ignore].
     // Run with: cargo test -p erio-embedding -- --ignored
@@ -152,42 +147,75 @@ mod tests {
         assert!(files.tokenizer_path.ends_with("tokenizer.json"));
     }
 
-    #[tokio::test]
-    #[ignore = "requires model download"]
-    async fn downloads_all_required_files() {
-        let files = download_model_files("embeddinggemma-300M-Q8_0.gguf")
-            .await
-            .unwrap();
-        assert!(files.gguf_path.exists());
-        assert!(files.dense1_path.exists());
-        assert!(files.dense2_path.exists());
-        assert!(files.tokenizer_path.exists());
+    #[test]
+    fn gemma_new_is_sync_constructor_signature() {
+        let constructor: fn(EmbeddingConfig) -> Result<GemmaEmbedding, EmbeddingError> =
+            GemmaEmbedding::new;
+        let _ = constructor;
+    }
+
+    #[test]
+    #[allow(unsafe_code)]
+    fn model_files_from_env_errors_when_required_files_are_missing() {
+        static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        let _guard = ENV_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .expect("env lock poisoned");
+
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be after unix epoch")
+            .as_nanos();
+        let temp_dir = std::env::temp_dir().join(format!(
+            "erio-embedding-missing-model-files-{}-{unique}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&temp_dir).expect("failed to create temp model dir");
+        fs::write(temp_dir.join("tokenizer.json"), b"{}")
+            .expect("failed to create partial model file");
+
+        let previous_model_dir = std::env::var("ERIO_MODEL_DIR").ok();
+        unsafe { std::env::set_var("ERIO_MODEL_DIR", &temp_dir) };
+
+        let result = model_files_from_env();
+
+        match previous_model_dir {
+            Some(value) => unsafe { std::env::set_var("ERIO_MODEL_DIR", value) },
+            None => unsafe { std::env::remove_var("ERIO_MODEL_DIR") },
+        }
+
+        fs::remove_dir_all(&temp_dir).expect("failed to cleanup temp model dir");
+
+        match result {
+            Err(EmbeddingError::ModelLoad(message)) => {
+                assert!(
+                    message.contains("required model file missing"),
+                    "unexpected error message: {message}"
+                );
+            }
+            other => panic!("expected EmbeddingError::ModelLoad, got {other:?}"),
+        }
     }
 
     #[tokio::test]
     #[ignore = "requires model download"]
     async fn gemma_returns_name() {
-        let engine = GemmaEmbedding::new(EmbeddingConfig::default())
-            .await
-            .unwrap();
+        let engine = GemmaEmbedding::new(EmbeddingConfig::default()).unwrap();
         assert_eq!(engine.name(), "gemma");
     }
 
     #[tokio::test]
     #[ignore = "requires model download"]
     async fn gemma_returns_correct_dimensions() {
-        let engine = GemmaEmbedding::new(EmbeddingConfig::default())
-            .await
-            .unwrap();
+        let engine = GemmaEmbedding::new(EmbeddingConfig::default()).unwrap();
         assert_eq!(engine.dimensions(), 768);
     }
 
     #[tokio::test]
     #[ignore = "requires model download"]
     async fn gemma_embed_returns_correct_dimensions() {
-        let engine = GemmaEmbedding::new(EmbeddingConfig::default())
-            .await
-            .unwrap();
+        let engine = GemmaEmbedding::new(EmbeddingConfig::default()).unwrap();
         let vec = engine.embed("hello world").await.unwrap();
         assert_eq!(vec.len(), 768);
     }
@@ -195,9 +223,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "requires model download"]
     async fn gemma_embed_rejects_empty_input() {
-        let engine = GemmaEmbedding::new(EmbeddingConfig::default())
-            .await
-            .unwrap();
+        let engine = GemmaEmbedding::new(EmbeddingConfig::default()).unwrap();
         let result = engine.embed("").await;
         assert!(matches!(
             result.unwrap_err(),
@@ -208,9 +234,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "requires model download"]
     async fn gemma_same_input_same_output() {
-        let engine = GemmaEmbedding::new(EmbeddingConfig::default())
-            .await
-            .unwrap();
+        let engine = GemmaEmbedding::new(EmbeddingConfig::default()).unwrap();
         let v1 = engine.embed("test determinism").await.unwrap();
         let v2 = engine.embed("test determinism").await.unwrap();
         assert_eq!(v1, v2);
@@ -219,9 +243,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "requires model download"]
     async fn gemma_different_inputs_different_outputs() {
-        let engine = GemmaEmbedding::new(EmbeddingConfig::default())
-            .await
-            .unwrap();
+        let engine = GemmaEmbedding::new(EmbeddingConfig::default()).unwrap();
         let v1 = engine.embed("hello").await.unwrap();
         let v2 = engine.embed("world").await.unwrap();
         assert_ne!(v1, v2);
@@ -230,9 +252,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "requires model download"]
     async fn gemma_normalized_unit_length() {
-        let engine = GemmaEmbedding::new(EmbeddingConfig::default())
-            .await
-            .unwrap();
+        let engine = GemmaEmbedding::new(EmbeddingConfig::default()).unwrap();
         let vec = engine.embed("test normalization").await.unwrap();
         let magnitude: f32 = vec.iter().map(|x| x * x).sum::<f32>().sqrt();
         assert!(
@@ -244,9 +264,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "requires model download"]
     async fn gemma_embed_batch_correct_count() {
-        let engine = GemmaEmbedding::new(EmbeddingConfig::default())
-            .await
-            .unwrap();
+        let engine = GemmaEmbedding::new(EmbeddingConfig::default()).unwrap();
         let results = engine.embed_batch(&["a", "b", "c"]).await.unwrap();
         assert_eq!(results.len(), 3);
         for vec in &results {
@@ -257,9 +275,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "requires model download"]
     async fn gemma_embed_batch_preserves_order() {
-        let engine = GemmaEmbedding::new(EmbeddingConfig::default())
-            .await
-            .unwrap();
+        let engine = GemmaEmbedding::new(EmbeddingConfig::default()).unwrap();
         let v_a = engine.embed("alpha").await.unwrap();
         let v_b = engine.embed("beta").await.unwrap();
         let batch = engine.embed_batch(&["alpha", "beta"]).await.unwrap();
