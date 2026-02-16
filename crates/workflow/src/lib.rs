@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 //! Erio Workflow - DAG workflow engine for orchestrating steps.
 
 pub mod builder;

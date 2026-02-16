@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 //! Erio Tools - Tool trait, registry, and execution for the agent runtime.
 
 mod registry;

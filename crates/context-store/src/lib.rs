@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 //! Erio Context Store - vector storage and semantic search.
 
 pub mod config;

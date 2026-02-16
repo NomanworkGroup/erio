@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 //! Erio Core - Core types, traits, and error handling for the agent runtime.
 
 pub mod config;

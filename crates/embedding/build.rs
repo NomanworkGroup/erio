@@ -12,6 +12,16 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-env-changed=ERIO_MODEL_DIR");
     println!("cargo:rerun-if-env-changed=ERIO_MODEL_RELEASE_BASE_URL");
+    println!("cargo:rerun-if-env-changed=DOCS_RS");
+    println!("cargo:rerun-if-env-changed=CARGO_CFG_DOCSRS");
+
+    if is_docs_build() {
+        let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR must be set"));
+        let dummy_dir = out_dir.join("docsrs-model-dummy");
+        fs::create_dir_all(&dummy_dir).unwrap_or_else(|err| panic!("{err}"));
+        println!("cargo:rustc-env=ERIO_MODEL_DIR={}", dummy_dir.display());
+        return;
+    }
 
     let model_dir = if let Ok(path) = env::var("ERIO_MODEL_DIR") {
         let path = PathBuf::from(path);
@@ -61,6 +71,11 @@ fn ensure_model_assets(model_dir: &Path) -> Result<(), String> {
     }
 
     build_assets::validate_model_dir(model_dir)
+}
+
+fn is_docs_build() -> bool {
+    env::var_os("DOCS_RS").as_deref() == Some("1".as_ref())
+        || env::var_os("CARGO_CFG_DOCSRS").is_some()
 }
 
 fn download_file(url: &str, dest: &Path) -> Result<(), io::Error> {

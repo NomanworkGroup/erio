@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 //! Erio LLM Client - LLM provider abstraction and adapters for the agent runtime.
 
 pub mod error;

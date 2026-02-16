@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 //! Erio Embedding - embedding engine abstraction for computing vector embeddings.
 //!
 //! Local embedding engines (e.g. `GemmaEmbedding`) load model files from `ERIO_MODEL_DIR`.

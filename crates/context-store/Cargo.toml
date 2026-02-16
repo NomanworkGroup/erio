@@ -4,11 +4,14 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+readme = "README.md"
+documentation = "https://docs.rs/erio-context-store"
 description = "Context and vector storage for Erio"
 
 [dependencies]
-erio-core = { path = "../core" }
-erio-embedding = { path = "../embedding" }
+erio-core = { version = "0.1.0", path = "../core" }
+erio-embedding = { version = "0.1.0", path = "../embedding" }
 
 # Vector database
 lancedb.workspace = true

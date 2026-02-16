@@ -4,10 +4,13 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+readme = "README.md"
+documentation = "https://docs.rs/erio-llm-client"
 description = "LLM provider abstraction and adapters for Erio"
 
 [dependencies]
-erio-core = { path = "../core" }
+erio-core = { version = "0.1.0", path = "../core" }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

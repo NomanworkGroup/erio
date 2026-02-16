@@ -1,3 +1,5 @@
+#![doc = include_str!("../README.md")]
+
 //! Erio Event Bus
 
 pub mod bus;
