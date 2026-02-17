@@ -10,6 +10,8 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    env:
+      DOCS_RS: "1"  # skip erio-embedding build.rs model download during CI checks
     steps:
       - name: Checkout
         uses: actions/checkout@v4
