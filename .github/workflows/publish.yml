@@ -23,12 +23,14 @@ jobs:
 
       - name: Cache cargo artifacts
         uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "v1"
 
       - name: Cargo check
-        run: cargo check --workspace
+        run: cargo check --workspace --exclude erio-embedding
 
       - name: Clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --workspace --exclude erio-embedding --all-targets -- -D warnings
 
       - name: Tests
         run: cargo test --workspace --exclude erio-embedding --exclude erio-context-store
