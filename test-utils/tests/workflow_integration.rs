@@ -43,6 +43,7 @@ impl MockLlmProvider {
 
 #[async_trait::async_trait]
 impl LlmProvider for MockLlmProvider {
+    #[allow(clippy::unnecessary_literal_bound)]
     fn name(&self) -> &str {
         "mock"
     }
@@ -164,10 +165,12 @@ struct UppercaseTool;
 
 #[async_trait::async_trait]
 impl Tool for UppercaseTool {
+    #[allow(clippy::unnecessary_literal_bound)]
     fn name(&self) -> &str {
         "uppercase"
     }
 
+    #[allow(clippy::unnecessary_literal_bound)]
     fn description(&self) -> &str {
         "Converts input text to uppercase"
     }
@@ -218,10 +221,13 @@ async fn tool_step_executes_in_workflow() {
     let registry = Arc::new(registry);
 
     // A step that produces JSON params, then a tool step that consumes them
+    #[allow(clippy::items_after_statements)]
     struct ParamStep;
 
+    #[allow(clippy::items_after_statements)]
     #[async_trait::async_trait]
     impl Step for ParamStep {
+        #[allow(clippy::unnecessary_literal_bound)]
         fn id(&self) -> &str {
             "params"
         }
@@ -305,6 +311,7 @@ async fn llm_error_propagates_to_dependent_steps() {
 
     #[async_trait::async_trait]
     impl LlmProvider for FailingLlm {
+        #[allow(clippy::unnecessary_literal_bound)]
         fn name(&self) -> &str {
             "failing"
         }
@@ -361,8 +368,7 @@ async fn step_context_passes_output_to_next() {
         async fn execute(&self, ctx: &mut WorkflowContext) -> Result<StepOutput, WorkflowError> {
             let prev = ctx
                 .output(&self.dep_id)
-                .map(|o| format!("received: {}", o.value()))
-                .unwrap_or_else(|| "no input".into());
+                .map_or_else(|| "no input".into(), |o| format!("received: {}", o.value()));
             Ok(StepOutput::new(&prev))
         }
     }

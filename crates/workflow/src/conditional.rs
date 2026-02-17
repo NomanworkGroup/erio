@@ -107,8 +107,7 @@ mod tests {
         let step = ConditionalStep::new("check", inner, |ctx| {
             // Only run if step "gate" produced "open"
             ctx.output("gate")
-                .map(|o| o.value() == "open")
-                .unwrap_or(false)
+                .is_some_and(|o| o.value() == "open")
         });
 
         // Without gate output → skip
@@ -142,6 +141,7 @@ mod tests {
 
         #[async_trait::async_trait]
         impl Step for FailInner {
+            #[allow(clippy::unnecessary_literal_bound)]
             fn id(&self) -> &str {
                 "fail"
             }
@@ -179,6 +179,7 @@ mod tests {
 
         #[async_trait::async_trait]
         impl Step for GateStep {
+            #[allow(clippy::unnecessary_literal_bound)]
             fn id(&self) -> &str {
                 "gate"
             }
@@ -195,8 +196,7 @@ mod tests {
             .step(
                 ConditionalStep::new("guarded", MockInner::new("guarded", "success"), |ctx| {
                     ctx.output("gate")
-                        .map(|o| o.value() == "open")
-                        .unwrap_or(false)
+                        .is_some_and(|o| o.value() == "open")
                 }),
                 &["gate"],
             )
@@ -218,6 +218,7 @@ mod tests {
 
         #[async_trait::async_trait]
         impl Step for GateStep {
+            #[allow(clippy::unnecessary_literal_bound)]
             fn id(&self) -> &str {
                 "gate"
             }
@@ -234,8 +235,7 @@ mod tests {
             .step(
                 ConditionalStep::new("guarded", MockInner::new("guarded", "ran"), |ctx| {
                     ctx.output("gate")
-                        .map(|o| o.value() == "open")
-                        .unwrap_or(false)
+                        .is_some_and(|o| o.value() == "open")
                 }),
                 &["gate"],
             )

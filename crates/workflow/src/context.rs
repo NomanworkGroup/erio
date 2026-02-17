@@ -97,7 +97,7 @@ mod tests {
         ctx.set_output("x", StepOutput::new("1"));
         ctx.set_output("y", StepOutput::new("2"));
         let mut ids = ctx.completed_step_ids();
-        ids.sort();
+        ids.sort_unstable();
         assert_eq!(ids, vec!["x", "y"]);
     }
 }

@@ -137,7 +137,7 @@ mod tests {
         assert_eq!(config.max_attempts, 3);
         assert_eq!(config.initial_delay, Duration::from_millis(100));
         assert_eq!(config.max_delay, Duration::from_secs(10));
-        assert_eq!(config.multiplier, 2.0);
+        assert!((config.multiplier - 2.0_f64).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -169,7 +169,7 @@ mod tests {
     fn retry_config_builder_sets_multiplier() {
         let config = RetryConfig::builder().multiplier(1.5).build();
 
-        assert_eq!(config.multiplier, 1.5);
+        assert!((config.multiplier - 1.5_f64).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -242,7 +242,7 @@ mod tests {
         assert_eq!(config.max_attempts, 4);
         assert_eq!(config.initial_delay, Duration::from_millis(500));
         assert_eq!(config.max_delay, Duration::from_secs(30));
-        assert_eq!(config.multiplier, 1.5);
+        assert!((config.multiplier - 1.5_f64).abs() < f64::EPSILON);
     }
 
     #[test]

@@ -552,7 +552,7 @@ mod tests {
         let result = engine.run(workflow).await.unwrap();
 
         let mut ids = result.completed_step_ids();
-        ids.sort();
+        ids.sort_unstable();
         assert_eq!(ids, vec!["x", "y"]);
     }
 }

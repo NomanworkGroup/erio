@@ -243,6 +243,7 @@ mod tests {
 
     #[async_trait::async_trait]
     impl erio_embedding::EmbeddingEngine for FakeEmbedding {
+        #[allow(clippy::unnecessary_literal_bound)]
         fn name(&self) -> &str {
             "fake"
         }

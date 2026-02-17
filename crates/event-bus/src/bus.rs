@@ -142,6 +142,7 @@ mod tests {
             &self.source_name
         }
 
+        #[allow(clippy::unnecessary_literal_bound)]
         fn description(&self) -> &str {
             "Fake source"
         }
@@ -291,7 +292,7 @@ mod tests {
         bus.register(FakeSource::empty("alpha"));
         bus.register(FakeSource::empty("beta"));
         let mut names = bus.source_names();
-        names.sort();
+        names.sort_unstable();
         assert_eq!(names, vec!["alpha", "beta"]);
     }
 }

@@ -319,7 +319,7 @@ mod tests {
         // All three can run in parallel
         assert_eq!(groups.len(), 1);
         let mut group = groups[0].clone();
-        group.sort();
+        group.sort_unstable();
         assert_eq!(group, vec!["a", "b", "c"]);
     }
 
@@ -352,7 +352,7 @@ mod tests {
         assert_eq!(groups.len(), 3);
         assert_eq!(groups[0], vec!["a"]);
         let mut mid = groups[1].clone();
-        mid.sort();
+        mid.sort_unstable();
         assert_eq!(mid, vec!["b", "c"]);
         assert_eq!(groups[2], vec!["d"]);
     }
@@ -388,8 +388,8 @@ mod tests {
         use super::*;
         use proptest::prelude::*;
 
-        /// Strategy: generate a list of (node_index, Vec<dep_indices>) where
-        /// dep_indices only reference earlier nodes (forward-only → always acyclic).
+        /// Strategy: generate a list of (`node_index`, Vec<`dep_indices`>) where
+        /// `dep_indices` only reference earlier nodes (forward-only → always acyclic).
         fn arb_acyclic_dag() -> impl Strategy<Value = Vec<(usize, Vec<usize>)>> {
             (1usize..=20).prop_flat_map(|n| {
                 let edges: Vec<BoxedStrategy<(usize, Vec<usize>)>> = (0..n)
@@ -436,7 +436,7 @@ mod tests {
             })
         }
 
-        /// Build a Dag from index-based edges (bypasses add_node validation).
+        /// Build a Dag from index-based edges (bypasses `add_node` validation).
         fn build_dag_from_edges(edges: &[(usize, Vec<usize>)]) -> Dag {
             let mut dag = Dag::new();
             // First pass: add all nodes without deps

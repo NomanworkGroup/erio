@@ -1,7 +1,7 @@
 # erio-llm-client
 
 `erio-llm-client` is Erio's provider abstraction for chat/completion style LLM
-calls. It includes request/response models, error handling, and an OpenAI-
+calls. It includes request/response models, error handling, and an `OpenAI`-
 compatible provider implementation.
 
 Use this crate to keep provider integration behind a trait while sharing a

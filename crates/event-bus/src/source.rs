@@ -46,10 +46,12 @@ mod tests {
 
     #[async_trait::async_trait]
     impl EventSource for FakeSource {
+        #[allow(clippy::unnecessary_literal_bound)]
         fn name(&self) -> &str {
             "fake"
         }
 
+        #[allow(clippy::unnecessary_literal_bound)]
         fn description(&self) -> &str {
             "A fake event source for testing"
         }
@@ -70,10 +72,12 @@ mod tests {
 
     #[async_trait::async_trait]
     impl EventSource for FailingSource {
+        #[allow(clippy::unnecessary_literal_bound)]
         fn name(&self) -> &str {
             "failing"
         }
 
+        #[allow(clippy::unnecessary_literal_bound)]
         fn description(&self) -> &str {
             "Always fails"
         }

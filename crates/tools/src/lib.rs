@@ -95,10 +95,12 @@ mod tests {
 
     #[async_trait::async_trait]
     impl Tool for EchoTool {
+        #[allow(clippy::unnecessary_literal_bound)]
         fn name(&self) -> &str {
             "echo"
         }
 
+        #[allow(clippy::unnecessary_literal_bound)]
         fn description(&self) -> &str {
             "Echoes the input message"
         }

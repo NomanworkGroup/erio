@@ -205,7 +205,7 @@ mod tests {
         let groups = workflow.parallel_groups().unwrap();
         assert_eq!(groups.len(), 2);
         let mut first = groups[0].clone();
-        first.sort();
+        first.sort_unstable();
         assert_eq!(first, vec!["a", "b"]);
         assert_eq!(groups[1], vec!["c"]);
     }

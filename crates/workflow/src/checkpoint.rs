@@ -103,7 +103,7 @@ mod tests {
         checkpoint.mark_completed("y", StepOutput::new("Y"));
 
         let mut ids = checkpoint.completed_ids();
-        ids.sort();
+        ids.sort_unstable();
         assert_eq!(ids, vec!["x", "y"]);
     }
 

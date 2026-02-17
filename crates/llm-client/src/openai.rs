@@ -40,7 +40,7 @@ impl OpenAiProvider {
     }
 
     /// Converts an internal [`erio_core::Message`] to the JSON shape the
-    /// OpenAI chat-completions API expects.
+    /// `OpenAI` chat-completions API expects.
     ///
     /// Key differences from the naive serde output:
     /// - Assistant tool-call content is split into a top-level `tool_calls`
