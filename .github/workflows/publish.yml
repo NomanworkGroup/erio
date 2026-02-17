@@ -63,11 +63,17 @@ jobs:
           cargo publish -p erio-tools --no-verify || echo "erio-tools: already published or failed, continuing"
           cargo publish -p erio-llm-client --no-verify || echo "erio-llm-client: already published or failed, continuing"
           cargo publish -p erio-event-bus --no-verify || echo "erio-event-bus: already published or failed, continuing"
+
+      - name: Sleep for crates.io new-crate rate limit (5 crates published so far)
+        run: sleep 600
+
+      - name: Batch 3 — erio-embedding (after rate limit window)
+        run: |
           cargo publish -p erio-embedding --no-verify || echo "erio-embedding: already published or failed, continuing"
 
       - name: Sleep for crates.io index propagation
         run: sleep 30
 
-      - name: Batch 3 — depends on core + embedding
+      - name: Batch 4 — depends on core + embedding
         run: |
           cargo publish -p erio-context-store --no-verify || echo "erio-context-store: already published or failed, continuing"
