@@ -71,8 +71,8 @@ jobs:
         run: |
           cargo publish -p erio-embedding --no-verify || echo "erio-embedding: already published or failed, continuing"
 
-      - name: Sleep for crates.io index propagation
-        run: sleep 30
+      - name: Sleep for crates.io index propagation (erio-embedding)
+        run: sleep 60
 
       - name: Batch 4 — depends on core + embedding
         run: |
